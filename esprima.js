@@ -3910,14 +3910,3 @@ esprima = {};
 
         return types;
     }());
-
-
-
-
-//window['esprima'] = esprima;
-//esprima['version'] = esprima.version;
-//esprima['Syntax'] = esprima.Syntax;
-//esprima['parse'] = esprima.parse;
-
-
-

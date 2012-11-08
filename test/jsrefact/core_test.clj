@@ -1,6 +1,6 @@
 (ns jsrefact.core-test
   (:use clojure.test
-        jsrefact.core))
+        jsrefact))
 
 (deftest a-test
   (testing "FIXME, I fail."
