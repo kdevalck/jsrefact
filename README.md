@@ -1,10 +1,13 @@
-# jsrefact
+# jsrefact (WIP) 
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure library designed to perform Javascript refactoring with Clojurescript & core.logic
 
 ## Usage
 
-FIXME
+$ lein cljsbuild once
+
+## Unit testing
+After 'lein cljsbuild once' open testing.html in browser for unit tests
 
 ## License
 
