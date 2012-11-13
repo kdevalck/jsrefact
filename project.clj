@@ -2,7 +2,8 @@
   :plugins [[lein-cljsbuild "0.2.9"]]
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/tools.macro "0.1.1"]
-                 [org.clojure/core.logic "0.8.0-beta2"]]
+                 [org.clojure/core.logic "0.8.0-beta2"]
+		 [org.clojure/core.match "0.2.0-alpha9"]]
   :cljsbuild {
     :builds {
 

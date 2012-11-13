@@ -2,25 +2,29 @@
 	(:use-macros [cljs.core.logic.macros :only [run*]])
 	(:require-macros [cljs.core.logic.macros :as l])
 	(:use [jsrefact.core :only [js-print esprimaParser ast-kind ast-property-value
-		ast-properties ast? program child parsed has]]))
+		ast-properties ast? program child parsed has progrm]]))
 
 
 ; Parse a sample program
-;(def parsed (.parse esprimaParser "var x = 42"))
-;(def progrm (.pop (.-body parsed)))
+(def parsedTest (.parse esprimaParser "var x = 43"))
+(def progrmTest (.pop (.-body parsedTest)))
+; Swap the progrm from jsrefact.core to the programTest
+;  parsed inside jsrefact.tests.asttest to provide a 
+;  ast object to the unittests.
+(swap! progrm (fn [progrmT] progrmTest))
 
 (defn run []
   (js-print "AST Unit tests started.")
 
-  (assert (= (ast-kind parsed) "Program"))
+  (assert (= (ast-kind parsedTest) "Program"))
 
-  (assert (= (ast-property-value parsed "type") "Program"))
+  (assert (= (ast-property-value parsedTest "type") "Program"))
 
-  (assert (= (first (ast-properties parsed)) "type"))
+  (assert (= (first (ast-properties parsedTest)) "type"))
 
   (let [fakeAst 5]
   	(assert (not= (ast? fakeAst) true))
-  	(assert (= (ast? parsed) true)))
+  	(assert (= (ast? parsedTest) true)))
 
   (assert (= (.-type (first (l/run* [?p] (program ?p)))) "VariableDeclaration"))
 

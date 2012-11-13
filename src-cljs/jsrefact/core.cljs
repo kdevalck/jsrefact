@@ -1,14 +1,20 @@
 (ns jsrefact.core
+  ^{:doc "TO BE UPDATED"
+    :author "Coen De Roover & Kevin De Valck"}
 	(:refer-clojure :exclude [==])
   	(:use-macros
    		[cljs.core.logic.macros
-    		:only [run run* == conde conda condu fresh defne matche all project]])
+    		:only [run run* == conde conda condu fresh defne matche all project trace-lvars]])
   	(:require-macros [cljs.core.logic.macros :as l]
                    [clojure.tools.macro :as mu])
   	(:use
 		   [cljs.core.logic
     		:only [membero]])
-	(:require [esp :as es]))
+	(:require [esp :as es]
+            [clojure.browser.repl :as repl]))
+
+;; browser connected REPL
+(repl/connect "http://localhost:9000/repl")
 
 ; Debug print in the javascript console
 (defn 
@@ -16,6 +22,8 @@
   "Print function to write to browser's console"
   [arg]
 	(.log js/console arg))
+
+;(set! *print-fn* js-print)
 
 ; Function to test unit testing
 (defn 
@@ -30,8 +38,11 @@
 ;(js-print (.-version y ))
 (def parsed (.parse esprimaParser " var x = 42"))
 ;(js-print parsed)
-(def progrm (.pop (.-body parsed)))
-;(js-print progrm)
+;(def progrm (.pop (.-body parsed)))
+(def progrm (atom (.pop (.-body parsed))))
+
+
+;(js-print @progrm)
 ;(js-print (.keys (js* "Object") "test"))
 ;(js-print (.keys js/Object program))
 
@@ -65,7 +76,8 @@
   ast?
   "Check for an AST (if it has a 'type' property) "
   [ast]
-  (not= nil (aget ast "type")))
+  (and (instance? js/Object ast)
+       (not= nil (aget ast "type"))))
 
 (defn
   program
@@ -77,7 +89,7 @@
   "
   [?node]
   (l/all 
-    (l/== ?node progrm)))
+    (l/== ?node @progrm)))
 
 ; Forward declaration of child+
 (declare child+)
@@ -91,12 +103,10 @@
     (program ?root)
     (l/conde
       [(l/== ?root ?node)]
-      [(child+ ?root ?node)
-        ])
+      [(child+ ?root ?node)])
     (l/project [?node]
       (l/== ?kind (ast-kind ?node)))
     ))
-
 
 
 (defn
@@ -117,6 +127,12 @@
       (l/== ?value (ast-property-value ?node ?property)))
     ))
 
+(defn
+  lprint
+  ""
+  [?val]
+  (l/project [?val]
+    (l/== nil (js-print ?val))))
 
 (defn
   child
@@ -126,29 +142,40 @@
   [?property ?node ?value]
   (l/fresh [?actual-value]
     (has ?property ?node ?actual-value)
+    (lprint ?actual-value)
     (l/project [?actual-value]
       (l/conda
         [(l/== true (ast? ?actual-value))
           (l/== ?value ?actual-value)]
         [(l/== true (instance? js/Array ?actual-value))
+        
          (membero ?value (seq ?actual-value))])
-      )))
+      )
+    (lprint ?value)))
+
+;(def cnt 0)
+;(defn inccnt [] (def cnt (inc cnt)))
+;(js-print (true? (inccnt)))
 
 
 (defn
   child+
   "?child is contained within ?node at a certain depth"
   [?node ?child]
+  ;(js-print cnt)
+  ;(inccnt)
   (l/fresh [?prop ?ch]
     (child ?prop ?node ?ch)
+    (l/project [?ch]
+      (l/== nil (js-print ?ch)))
     (l/conde
       [(l/== ?child ?ch)]
       [(child+ ?ch ?child)])))
 
+;(js-print (instance? js/Object 42))
 
+; (l/run* [?child]
+;      (l/fresh [?p]
+;        (program ?p)
+;        (child+ ?p ?child)))
 
-;(js-print 
-;   (first (l/run* [?child]
-;    (l/fresh [?p]
-;      (program ?p)
-;      (child+ ?p ?child)))))
