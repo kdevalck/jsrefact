@@ -25155,6 +25155,129 @@ clojure.browser.event.has_listener = function has_listener(obj, opt_type, opt_ca
 clojure.browser.event.remove_all = function remove_all(opt_obj, opt_type, opt_capt) {
   return null
 };
+goog.provide("goog.json");
+goog.provide("goog.json.Serializer");
+goog.json.isValid_ = function(s) {
+  if(/^\s*$/.test(s)) {
+    return false
+  }
+  var backslashesRe = /\\["\\\/bfnrtu]/g;
+  var simpleValuesRe = /"[^"\\\n\r\u2028\u2029\x00-\x08\x10-\x1f\x80-\x9f]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
+  var openBracketsRe = /(?:^|:|,)(?:[\s\u2028\u2029]*\[)+/g;
+  var remainderRe = /^[\],:{}\s\u2028\u2029]*$/;
+  return remainderRe.test(s.replace(backslashesRe, "@").replace(simpleValuesRe, "]").replace(openBracketsRe, ""))
+};
+goog.json.parse = function(s) {
+  var o = String(s);
+  if(goog.json.isValid_(o)) {
+    try {
+      return eval("(" + o + ")")
+    }catch(ex) {
+    }
+  }
+  throw Error("Invalid JSON string: " + o);
+};
+goog.json.unsafeParse = function(s) {
+  return eval("(" + s + ")")
+};
+goog.json.Replacer;
+goog.json.serialize = function(object, opt_replacer) {
+  return(new goog.json.Serializer(opt_replacer)).serialize(object)
+};
+goog.json.Serializer = function(opt_replacer) {
+  this.replacer_ = opt_replacer
+};
+goog.json.Serializer.prototype.serialize = function(object) {
+  var sb = [];
+  this.serialize_(object, sb);
+  return sb.join("")
+};
+goog.json.Serializer.prototype.serialize_ = function(object, sb) {
+  switch(typeof object) {
+    case "string":
+      this.serializeString_(object, sb);
+      break;
+    case "number":
+      this.serializeNumber_(object, sb);
+      break;
+    case "boolean":
+      sb.push(object);
+      break;
+    case "undefined":
+      sb.push("null");
+      break;
+    case "object":
+      if(object == null) {
+        sb.push("null");
+        break
+      }
+      if(goog.isArray(object)) {
+        this.serializeArray_(object, sb);
+        break
+      }
+      this.serializeObject_(object, sb);
+      break;
+    case "function":
+      break;
+    default:
+      throw Error("Unknown type: " + typeof object);
+  }
+};
+goog.json.Serializer.charToJsonCharCache_ = {'"':'\\"', "\\":"\\\\", "/":"\\/", "\u0008":"\\b", "\u000c":"\\f", "\n":"\\n", "\r":"\\r", "\t":"\\t", "\x0B":"\\u000b"};
+goog.json.Serializer.charsToReplace_ = /\uffff/.test("\uffff") ? /[\\\"\x00-\x1f\x7f-\uffff]/g : /[\\\"\x00-\x1f\x7f-\xff]/g;
+goog.json.Serializer.prototype.serializeString_ = function(s, sb) {
+  sb.push('"', s.replace(goog.json.Serializer.charsToReplace_, function(c) {
+    if(c in goog.json.Serializer.charToJsonCharCache_) {
+      return goog.json.Serializer.charToJsonCharCache_[c]
+    }
+    var cc = c.charCodeAt(0);
+    var rv = "\\u";
+    if(cc < 16) {
+      rv += "000"
+    }else {
+      if(cc < 256) {
+        rv += "00"
+      }else {
+        if(cc < 4096) {
+          rv += "0"
+        }
+      }
+    }
+    return goog.json.Serializer.charToJsonCharCache_[c] = rv + cc.toString(16)
+  }), '"')
+};
+goog.json.Serializer.prototype.serializeNumber_ = function(n, sb) {
+  sb.push(isFinite(n) && !isNaN(n) ? n : "null")
+};
+goog.json.Serializer.prototype.serializeArray_ = function(arr, sb) {
+  var l = arr.length;
+  sb.push("[");
+  var sep = "";
+  for(var i = 0;i < l;i++) {
+    sb.push(sep);
+    var value = arr[i];
+    this.serialize_(this.replacer_ ? this.replacer_.call(arr, String(i), value) : value, sb);
+    sep = ","
+  }
+  sb.push("]")
+};
+goog.json.Serializer.prototype.serializeObject_ = function(obj, sb) {
+  sb.push("{");
+  var sep = "";
+  for(var key in obj) {
+    if(Object.prototype.hasOwnProperty.call(obj, key)) {
+      var value = obj[key];
+      if(typeof value != "function") {
+        sb.push(sep);
+        this.serializeString_(key, sb);
+        sb.push(":");
+        this.serialize_(this.replacer_ ? this.replacer_.call(obj, key, value) : value, sb);
+        sep = ","
+      }
+    }
+  }
+  sb.push("}")
+};
 goog.provide("goog.structs");
 goog.require("goog.array");
 goog.require("goog.object");
@@ -27901,129 +28024,6 @@ goog.dom.DomHelper.prototype.getNodeTextOffset = goog.dom.getNodeTextOffset;
 goog.dom.DomHelper.prototype.getAncestorByTagNameAndClass = goog.dom.getAncestorByTagNameAndClass;
 goog.dom.DomHelper.prototype.getAncestorByClass = goog.dom.getAncestorByClass;
 goog.dom.DomHelper.prototype.getAncestor = goog.dom.getAncestor;
-goog.provide("goog.json");
-goog.provide("goog.json.Serializer");
-goog.json.isValid_ = function(s) {
-  if(/^\s*$/.test(s)) {
-    return false
-  }
-  var backslashesRe = /\\["\\\/bfnrtu]/g;
-  var simpleValuesRe = /"[^"\\\n\r\u2028\u2029\x00-\x08\x10-\x1f\x80-\x9f]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
-  var openBracketsRe = /(?:^|:|,)(?:[\s\u2028\u2029]*\[)+/g;
-  var remainderRe = /^[\],:{}\s\u2028\u2029]*$/;
-  return remainderRe.test(s.replace(backslashesRe, "@").replace(simpleValuesRe, "]").replace(openBracketsRe, ""))
-};
-goog.json.parse = function(s) {
-  var o = String(s);
-  if(goog.json.isValid_(o)) {
-    try {
-      return eval("(" + o + ")")
-    }catch(ex) {
-    }
-  }
-  throw Error("Invalid JSON string: " + o);
-};
-goog.json.unsafeParse = function(s) {
-  return eval("(" + s + ")")
-};
-goog.json.Replacer;
-goog.json.serialize = function(object, opt_replacer) {
-  return(new goog.json.Serializer(opt_replacer)).serialize(object)
-};
-goog.json.Serializer = function(opt_replacer) {
-  this.replacer_ = opt_replacer
-};
-goog.json.Serializer.prototype.serialize = function(object) {
-  var sb = [];
-  this.serialize_(object, sb);
-  return sb.join("")
-};
-goog.json.Serializer.prototype.serialize_ = function(object, sb) {
-  switch(typeof object) {
-    case "string":
-      this.serializeString_(object, sb);
-      break;
-    case "number":
-      this.serializeNumber_(object, sb);
-      break;
-    case "boolean":
-      sb.push(object);
-      break;
-    case "undefined":
-      sb.push("null");
-      break;
-    case "object":
-      if(object == null) {
-        sb.push("null");
-        break
-      }
-      if(goog.isArray(object)) {
-        this.serializeArray_(object, sb);
-        break
-      }
-      this.serializeObject_(object, sb);
-      break;
-    case "function":
-      break;
-    default:
-      throw Error("Unknown type: " + typeof object);
-  }
-};
-goog.json.Serializer.charToJsonCharCache_ = {'"':'\\"', "\\":"\\\\", "/":"\\/", "\u0008":"\\b", "\u000c":"\\f", "\n":"\\n", "\r":"\\r", "\t":"\\t", "\x0B":"\\u000b"};
-goog.json.Serializer.charsToReplace_ = /\uffff/.test("\uffff") ? /[\\\"\x00-\x1f\x7f-\uffff]/g : /[\\\"\x00-\x1f\x7f-\xff]/g;
-goog.json.Serializer.prototype.serializeString_ = function(s, sb) {
-  sb.push('"', s.replace(goog.json.Serializer.charsToReplace_, function(c) {
-    if(c in goog.json.Serializer.charToJsonCharCache_) {
-      return goog.json.Serializer.charToJsonCharCache_[c]
-    }
-    var cc = c.charCodeAt(0);
-    var rv = "\\u";
-    if(cc < 16) {
-      rv += "000"
-    }else {
-      if(cc < 256) {
-        rv += "00"
-      }else {
-        if(cc < 4096) {
-          rv += "0"
-        }
-      }
-    }
-    return goog.json.Serializer.charToJsonCharCache_[c] = rv + cc.toString(16)
-  }), '"')
-};
-goog.json.Serializer.prototype.serializeNumber_ = function(n, sb) {
-  sb.push(isFinite(n) && !isNaN(n) ? n : "null")
-};
-goog.json.Serializer.prototype.serializeArray_ = function(arr, sb) {
-  var l = arr.length;
-  sb.push("[");
-  var sep = "";
-  for(var i = 0;i < l;i++) {
-    sb.push(sep);
-    var value = arr[i];
-    this.serialize_(this.replacer_ ? this.replacer_.call(arr, String(i), value) : value, sb);
-    sep = ","
-  }
-  sb.push("]")
-};
-goog.json.Serializer.prototype.serializeObject_ = function(obj, sb) {
-  sb.push("{");
-  var sep = "";
-  for(var key in obj) {
-    if(Object.prototype.hasOwnProperty.call(obj, key)) {
-      var value = obj[key];
-      if(typeof value != "function") {
-        sb.push(sep);
-        this.serializeString_(key, sb);
-        sb.push(":");
-        this.serialize_(this.replacer_ ? this.replacer_.call(obj, key, value) : value, sb);
-        sep = ","
-      }
-    }
-  }
-  sb.push("}")
-};
 goog.provide("goog.structs.Collection");
 goog.structs.Collection = function() {
 };
@@ -33889,25 +33889,25 @@ clojure.browser.repl.connect.call(null, "http://localhost:9000/repl");
 jsrefact.core.js_print = function js_print(arg) {
   return console.log(arg)
 };
-jsrefact.core.add_some_numbers = function() {
-  var add_some_numbers__delegate = function(numbers) {
-    return cljs.core.apply.call(null, cljs.core._PLUS_, numbers)
-  };
-  var add_some_numbers = function(var_args) {
-    var numbers = null;
-    if(goog.isDef(var_args)) {
-      numbers = cljs.core.array_seq(Array.prototype.slice.call(arguments, 0), 0)
-    }
-    return add_some_numbers__delegate.call(this, numbers)
-  };
-  add_some_numbers.cljs$lang$maxFixedArity = 0;
-  add_some_numbers.cljs$lang$applyTo = function(arglist__3953) {
-    var numbers = cljs.core.seq(arglist__3953);
-    return add_some_numbers__delegate(numbers)
-  };
-  add_some_numbers.cljs$lang$arity$variadic = add_some_numbers__delegate;
-  return add_some_numbers
-}();
+jsrefact.core.lprint = function lprint(_QMARK_val) {
+  return function(a11202) {
+    var _QMARK_val__$1 = cljs.core.logic._walk_STAR_.call(null, a11202, _QMARK_val);
+    return function(a__2897__auto__) {
+      return new cljs.core.logic.Inc(function() {
+        return cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2885__auto__) {
+          var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, null, jsrefact.core.js_print.call(null, _QMARK_val__$1));
+          if(cljs.core.truth_(temp__3971__auto__)) {
+            var b__2886__auto__ = temp__3971__auto__;
+            return b__2886__auto__
+          }else {
+            return null
+          }
+        })
+      })
+    }.call(null, a11202)
+  }
+};
+cljs.core._STAR_print_fn_STAR_ = jsrefact.core.js_print;
 jsrefact.core.esprimaParser = esprima;
 jsrefact.core.parsed = jsrefact.core.esprimaParser.parse(" var x = 42");
 jsrefact.core.progrm = cljs.core.atom.call(null, jsrefact.core.parsed.body.pop());
@@ -33945,9 +33945,9 @@ jsrefact.core.ast = function ast(_QMARK_kind, _QMARK_node) {
   return function(a__2897__auto__) {
     return new cljs.core.logic.Inc(function() {
       var _QMARK_root = cljs.core.logic.lvar.call(null, "\ufdd1'?root");
-      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.program.call(null, _QMARK_root)), function(a3956) {
+      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.program.call(null, _QMARK_root)), function(a11205) {
         return new cljs.core.logic.Inc(function() {
-          return cljs.core.logic._mplus.call(null, cljs.core.logic._bind.call(null, a3956, function(a__2885__auto__) {
+          return cljs.core.logic._mplus.call(null, cljs.core.logic._bind.call(null, a11205, function(a__2885__auto__) {
             var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_root, _QMARK_node);
             if(cljs.core.truth_(temp__3971__auto__)) {
               var b__2886__auto__ = temp__3971__auto__;
@@ -33956,11 +33956,11 @@ jsrefact.core.ast = function ast(_QMARK_kind, _QMARK_node) {
               return null
             }
           }), new cljs.core.logic.Inc(function() {
-            return cljs.core.logic._bind.call(null, a3956, jsrefact.core.child_PLUS_.call(null, _QMARK_root, _QMARK_node))
+            return cljs.core.logic._bind.call(null, a11205, jsrefact.core.child_PLUS_.call(null, _QMARK_root, _QMARK_node))
           }))
         })
-      }), function(a3957) {
-        var _QMARK_node__$1 = cljs.core.logic._walk_STAR_.call(null, a3957, _QMARK_node);
+      }), function(a11206) {
+        var _QMARK_node__$1 = cljs.core.logic._walk_STAR_.call(null, a11206, _QMARK_node);
         return function(a__2897__auto____$1) {
           return new cljs.core.logic.Inc(function() {
             return cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
@@ -33973,7 +33973,52 @@ jsrefact.core.ast = function ast(_QMARK_kind, _QMARK_node) {
               }
             })
           })
-        }.call(null, a3957)
+        }.call(null, a11206)
+      })
+    })
+  }
+};
+jsrefact.core.ast_with_input = function ast_with_input(_QMARK_kind, _QMARK_nodeIn, _QMARK_nodeOut) {
+  return function(a__2897__auto__) {
+    return new cljs.core.logic.Inc(function() {
+      var _QMARK_root = cljs.core.logic.lvar.call(null, "\ufdd1'?root");
+      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2885__auto__) {
+        var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_root, _QMARK_nodeIn);
+        if(cljs.core.truth_(temp__3971__auto__)) {
+          var b__2886__auto__ = temp__3971__auto__;
+          return b__2886__auto__
+        }else {
+          return null
+        }
+      }), function(a11209) {
+        return new cljs.core.logic.Inc(function() {
+          return cljs.core.logic._mplus.call(null, cljs.core.logic._bind.call(null, a11209, function(a__2885__auto__) {
+            var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_root, _QMARK_nodeOut);
+            if(cljs.core.truth_(temp__3971__auto__)) {
+              var b__2886__auto__ = temp__3971__auto__;
+              return b__2886__auto__
+            }else {
+              return null
+            }
+          }), new cljs.core.logic.Inc(function() {
+            return cljs.core.logic._bind.call(null, a11209, jsrefact.core.child_PLUS_.call(null, _QMARK_root, _QMARK_nodeOut))
+          }))
+        })
+      }), function(a11210) {
+        var _QMARK_nodeOut__$1 = cljs.core.logic._walk_STAR_.call(null, a11210, _QMARK_nodeOut);
+        return function(a__2897__auto____$1) {
+          return new cljs.core.logic.Inc(function() {
+            return cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+              var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_kind, jsrefact.core.ast_kind.call(null, _QMARK_nodeOut__$1));
+              if(cljs.core.truth_(temp__3971__auto__)) {
+                var b__2886__auto__ = temp__3971__auto__;
+                return b__2886__auto__
+              }else {
+                return null
+              }
+            })
+          })
+        }.call(null, a11210)
       })
     })
   }
@@ -33983,8 +34028,8 @@ jsrefact.core.has = function has(_QMARK_property, _QMARK_node, _QMARK_value) {
     return new cljs.core.logic.Inc(function() {
       var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
       var _QMARK_properties = cljs.core.logic.lvar.call(null, "\ufdd1'?properties");
-      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a3960) {
-        var _QMARK_node__$1 = cljs.core.logic._walk_STAR_.call(null, a3960, _QMARK_node);
+      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a11213) {
+        var _QMARK_node__$1 = cljs.core.logic._walk_STAR_.call(null, a11213, _QMARK_node);
         return function(a__2897__auto____$1) {
           return new cljs.core.logic.Inc(function() {
             return cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
@@ -33997,10 +34042,10 @@ jsrefact.core.has = function has(_QMARK_property, _QMARK_node, _QMARK_value) {
               }
             })
           })
-        }.call(null, a3960)
-      }), cljs.core.logic.membero.call(null, _QMARK_property, _QMARK_properties)), function(a3961) {
-        var _QMARK_property__$1 = cljs.core.logic._walk_STAR_.call(null, a3961, _QMARK_property);
-        var _QMARK_node__$1 = cljs.core.logic._walk_STAR_.call(null, a3961, _QMARK_node);
+        }.call(null, a11213)
+      }), cljs.core.logic.membero.call(null, _QMARK_property, _QMARK_properties)), function(a11214) {
+        var _QMARK_property__$1 = cljs.core.logic._walk_STAR_.call(null, a11214, _QMARK_property);
+        var _QMARK_node__$1 = cljs.core.logic._walk_STAR_.call(null, a11214, _QMARK_node);
         return function(a__2897__auto____$1) {
           return new cljs.core.logic.Inc(function() {
             return cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
@@ -34013,69 +34058,75 @@ jsrefact.core.has = function has(_QMARK_property, _QMARK_node, _QMARK_value) {
               }
             })
           })
-        }.call(null, a3961)
+        }.call(null, a11214)
       })
     })
   }
 };
-jsrefact.core.lprint = function lprint(_QMARK_val) {
-  return function(a3963) {
-    var _QMARK_val__$1 = cljs.core.logic._walk_STAR_.call(null, a3963, _QMARK_val);
-    return function(a__2897__auto__) {
-      return new cljs.core.logic.Inc(function() {
-        return cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2885__auto__) {
-          var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, null, jsrefact.core.js_print.call(null, _QMARK_val__$1));
-          if(cljs.core.truth_(temp__3971__auto__)) {
-            var b__2886__auto__ = temp__3971__auto__;
-            return b__2886__auto__
-          }else {
-            return null
-          }
-        })
-      })
-    }.call(null, a3963)
-  }
-};
-jsrefact.core.child = function child(_QMARK_property, _QMARK_node, _QMARK_value) {
+jsrefact.core.child = function child(_QMARK_prop, _QMARK_node, _QMARK_val) {
   return function(a__2897__auto__) {
     return new cljs.core.logic.Inc(function() {
-      var _QMARK_actual_value = cljs.core.logic.lvar.call(null, "\ufdd1'?actual-value");
-      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.has.call(null, _QMARK_property, _QMARK_node, _QMARK_actual_value)), jsrefact.core.lprint.call(null, _QMARK_actual_value)), function(a3966) {
-        var _QMARK_actual_value__$1 = cljs.core.logic._walk_STAR_.call(null, a3966, _QMARK_actual_value);
+      var _QMARK_foundvals = cljs.core.logic.lvar.call(null, "\ufdd1'?foundvals");
+      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.has.call(null, _QMARK_prop, _QMARK_node, _QMARK_foundvals)), function(a11217) {
+        var _QMARK_foundvals__$1 = cljs.core.logic._walk_STAR_.call(null, a11217, _QMARK_foundvals);
         return function(a__2897__auto____$1) {
           return new cljs.core.logic.Inc(function() {
-            return cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a3967) {
-              return cljs.core.logic._ifa.call(null, function(a__2885__auto__) {
-                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, true, jsrefact.core.ast_QMARK_.call(null, _QMARK_actual_value__$1));
-                if(cljs.core.truth_(temp__3971__auto__)) {
-                  var b__2886__auto__ = temp__3971__auto__;
-                  return b__2886__auto__
-                }else {
-                  return null
-                }
-              }.call(null, a3967), cljs.core.PersistentVector.fromArray([function(a__2885__auto__) {
-                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_value, _QMARK_actual_value__$1);
-                if(cljs.core.truth_(temp__3971__auto__)) {
-                  var b__2886__auto__ = temp__3971__auto__;
-                  return b__2886__auto__
-                }else {
-                  return null
-                }
-              }], true), new cljs.core.Delay(cljs.core.atom.call(null, cljs.core.ObjMap.fromObject(["\ufdd0'done", "\ufdd0'value"], {"\ufdd0'done":false, "\ufdd0'value":null})), function() {
-                return cljs.core.logic._ifa.call(null, function(a__2885__auto__) {
-                  var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, true, cljs.core.instance_QMARK_.call(null, Array, _QMARK_actual_value__$1));
+            return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2955__auto__) {
+              cljs.core.println.call(null, _QMARK_foundvals__$1);
+              return a__2955__auto__
+            }), function(a11218) {
+              return new cljs.core.logic.Inc(function() {
+                return cljs.core.logic._mplus.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a11218, function(a__2885__auto__) {
+                  var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, true, jsrefact.core.ast_QMARK_.call(null, _QMARK_foundvals__$1));
                   if(cljs.core.truth_(temp__3971__auto__)) {
                     var b__2886__auto__ = temp__3971__auto__;
                     return b__2886__auto__
                   }else {
                     return null
                   }
-                }.call(null, a3967), cljs.core.PersistentVector.fromArray([cljs.core.logic.membero.call(null, _QMARK_value, cljs.core.seq.call(null, _QMARK_actual_value__$1))], true), null)
-              }))
+                }), function(a__2955__auto__) {
+                  cljs.core.println.call(null, "1", _QMARK_foundvals__$1);
+                  return a__2955__auto__
+                }), function(a__2885__auto__) {
+                  var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_val, _QMARK_foundvals__$1);
+                  if(cljs.core.truth_(temp__3971__auto__)) {
+                    var b__2886__auto__ = temp__3971__auto__;
+                    return b__2886__auto__
+                  }else {
+                    return null
+                  }
+                }), new cljs.core.logic.Inc(function() {
+                  return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a11218, function(a__2885__auto__) {
+                    var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, true, cljs.core.instance_QMARK_.call(null, Array, _QMARK_foundvals__$1));
+                    if(cljs.core.truth_(temp__3971__auto__)) {
+                      var b__2886__auto__ = temp__3971__auto__;
+                      return b__2886__auto__
+                    }else {
+                      return null
+                    }
+                  }), function(a__2955__auto__) {
+                    cljs.core.println.call(null, "2", _QMARK_foundvals__$1);
+                    return a__2955__auto__
+                  }), function(a__2897__auto____$2) {
+                    return new cljs.core.logic.Inc(function() {
+                      var _QMARK_s = cljs.core.logic.lvar.call(null, "\ufdd1'?s");
+                      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$2, function(a__2885__auto__) {
+                        var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_s, cljs.core.seq.call(null, _QMARK_foundvals__$1));
+                        if(cljs.core.truth_(temp__3971__auto__)) {
+                          var b__2886__auto__ = temp__3971__auto__;
+                          return b__2886__auto__
+                        }else {
+                          return null
+                        }
+                      }), cljs.core.logic.membero.call(null, _QMARK_val, _QMARK_s))
+                    })
+                  })
+                }))
+              })
             })
           })
-        }.call(null, a3966)
-      }), jsrefact.core.lprint.call(null, _QMARK_value))
+        }.call(null, a11217)
+      })
     })
   }
 };
@@ -34084,24 +34135,9 @@ jsrefact.core.child_PLUS_ = function child_PLUS_(_QMARK_node, _QMARK_child) {
     return new cljs.core.logic.Inc(function() {
       var _QMARK_prop = cljs.core.logic.lvar.call(null, "\ufdd1'?prop");
       var _QMARK_ch = cljs.core.logic.lvar.call(null, "\ufdd1'?ch");
-      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.child.call(null, _QMARK_prop, _QMARK_node, _QMARK_ch)), function(a3970) {
-        var _QMARK_ch__$1 = cljs.core.logic._walk_STAR_.call(null, a3970, _QMARK_ch);
-        return function(a__2897__auto____$1) {
-          return new cljs.core.logic.Inc(function() {
-            return cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
-              var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, null, jsrefact.core.js_print.call(null, _QMARK_ch__$1));
-              if(cljs.core.truth_(temp__3971__auto__)) {
-                var b__2886__auto__ = temp__3971__auto__;
-                return b__2886__auto__
-              }else {
-                return null
-              }
-            })
-          })
-        }.call(null, a3970)
-      }), function(a3971) {
+      return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.child.call(null, _QMARK_prop, _QMARK_node, _QMARK_ch)), function(a11220) {
         return new cljs.core.logic.Inc(function() {
-          return cljs.core.logic._mplus.call(null, cljs.core.logic._bind.call(null, a3971, function(a__2885__auto__) {
+          return cljs.core.logic._mplus.call(null, cljs.core.logic._bind.call(null, a11220, function(a__2885__auto__) {
             var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_child, _QMARK_ch);
             if(cljs.core.truth_(temp__3971__auto__)) {
               var b__2886__auto__ = temp__3971__auto__;
@@ -34110,30 +34146,13 @@ jsrefact.core.child_PLUS_ = function child_PLUS_(_QMARK_node, _QMARK_child) {
               return null
             }
           }), new cljs.core.logic.Inc(function() {
-            return cljs.core.logic._bind.call(null, a3971, child_PLUS_.call(null, _QMARK_ch, _QMARK_child))
+            return cljs.core.logic._bind.call(null, a11220, child_PLUS_.call(null, _QMARK_ch, _QMARK_child))
           }))
         })
       })
     })
   }
 };
-cljs.core.doall.call(null, function() {
-  var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
-    return function(a__2897__auto__) {
-      return new cljs.core.logic.Inc(function() {
-        var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
-        return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.program.call(null, _QMARK_p)), function(a__2906__auto__) {
-          return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_p), cljs.core.List.EMPTY)
-        })
-      })
-    }.call(null, cljs.core.logic.empty_s)
-  }));
-  if(false) {
-    return cljs.core.take.call(null, false, xs__2905__auto__)
-  }else {
-    return xs__2905__auto__
-  }
-}());
 goog.provide("jsrefact.tests.asttest");
 goog.require("cljs.core");
 goog.require("jsrefact.core");
@@ -34143,28 +34162,111 @@ jsrefact.tests.asttest.progrmTest = jsrefact.tests.asttest.parsedTest.body.pop()
 cljs.core.swap_BANG_.call(null, jsrefact.core.progrm, function(progrmT) {
   return jsrefact.tests.asttest.progrmTest
 });
-jsrefact.tests.asttest.run = function run() {
-  jsrefact.core.js_print.call(null, "AST Unit tests started.");
-  if(cljs.core._EQ_.call(null, jsrefact.core.ast_kind.call(null, jsrefact.tests.asttest.parsedTest), "Program")) {
+jsrefact.tests.asttest.one = cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+  var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+    return function(a__2897__auto__) {
+      return new cljs.core.logic.Inc(function() {
+        var _QMARK_value = cljs.core.logic.lvar.call(null, "\ufdd1'?value");
+        return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+          return new cljs.core.logic.Inc(function() {
+            var _QMARK_node = cljs.core.logic.lvar.call(null, "\ufdd1'?node");
+            var _QMARK_prop = cljs.core.logic.lvar.call(null, "\ufdd1'?prop");
+            return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_node)), jsrefact.core.child.call(null, _QMARK_prop, _QMARK_node, _QMARK_value))
+          })
+        }), function(a__2906__auto__) {
+          return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_value), cljs.core.List.EMPTY)
+        })
+      })
+    }.call(null, cljs.core.logic.empty_s)
+  }));
+  if(false) {
+    return cljs.core.take.call(null, false, xs__2905__auto__)
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-kind", "\ufdd1'parsedTest"), cljs.core.hash_map("\ufdd0'line", 19)), "Program"), cljs.core.hash_map("\ufdd0'line", 19))))].join(""));
+    return xs__2905__auto__
   }
+}()));
+jsrefact.tests.asttest.sec = cljs.core.second.call(null, cljs.core.doall.call(null, function() {
+  var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+    return function(a__2897__auto__) {
+      return new cljs.core.logic.Inc(function() {
+        var _QMARK_v = cljs.core.logic.lvar.call(null, "\ufdd1'?v");
+        return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+          return new cljs.core.logic.Inc(function() {
+            var _QMARK_n = cljs.core.logic.lvar.call(null, "\ufdd1'?n");
+            var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+            return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+              var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_n, jsrefact.tests.asttest.one);
+              if(cljs.core.truth_(temp__3971__auto__)) {
+                var b__2886__auto__ = temp__3971__auto__;
+                return b__2886__auto__
+              }else {
+                return null
+              }
+            }), jsrefact.core.child.call(null, _QMARK_p, _QMARK_n, _QMARK_v))
+          })
+        }), function(a__2906__auto__) {
+          return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_v), cljs.core.List.EMPTY)
+        })
+      })
+    }.call(null, cljs.core.logic.empty_s)
+  }));
+  if(false) {
+    return cljs.core.take.call(null, false, xs__2905__auto__)
+  }else {
+    return xs__2905__auto__
+  }
+}()));
+jsrefact.tests.asttest.run = function run() {
+  cljs.core.println.call(null, "AST Unit tests started.");
   if(cljs.core._EQ_.call(null, jsrefact.core.ast_property_value.call(null, jsrefact.tests.asttest.parsedTest, "type"), "Program")) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-property-value", "\ufdd1'parsedTest", "type"), cljs.core.hash_map("\ufdd0'line", 21)), "Program"), cljs.core.hash_map("\ufdd0'line", 21))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-property-value", "\ufdd1'parsedTest", "type"), cljs.core.hash_map("\ufdd0'line", 29)), "Program"), cljs.core.hash_map("\ufdd0'line", 29))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_property_value.call(null, cljs.core.deref.call(null, jsrefact.core.progrm), "type"), "VariableDeclaration")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-property-value", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm"), "type"), cljs.core.hash_map("\ufdd0'line", 31)), "VariableDeclaration"), cljs.core.hash_map("\ufdd0'line", 31))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.instance_QMARK_.call(null, Array, jsrefact.core.ast_property_value.call(null, cljs.core.deref.call(null, jsrefact.core.progrm), "declarations")), true)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'instance?", "\ufdd1'js/Array", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-property-value", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm"), "declarations"), cljs.core.hash_map("\ufdd0'line", 33))), cljs.core.hash_map("\ufdd0'line", 33)), true), cljs.core.hash_map("\ufdd0'line", 33))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_property_value.call(null, cljs.core.first.call(null, jsrefact.core.ast_property_value.call(null, cljs.core.deref.call(null, jsrefact.core.progrm), "declarations")).init, "value"), 43)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-property-value", cljs.core.with_meta(cljs.core.list("\ufdd1'.-init", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-property-value", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm"), "declarations"), cljs.core.hash_map("\ufdd0'line", 37))), cljs.core.hash_map("\ufdd0'line", 
+    36))), cljs.core.hash_map("\ufdd0'line", 36)), "value"), cljs.core.hash_map("\ufdd0'line", 35)), 43), cljs.core.hash_map("\ufdd0'line", 35))))].join(""));
   }
   if(cljs.core._EQ_.call(null, cljs.core.first.call(null, jsrefact.core.ast_properties.call(null, jsrefact.tests.asttest.parsedTest)), "type")) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-properties", "\ufdd1'parsedTest"), cljs.core.hash_map("\ufdd0'line", 23))), cljs.core.hash_map("\ufdd0'line", 23)), "type"), cljs.core.hash_map("\ufdd0'line", 23))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-properties", "\ufdd1'parsedTest"), cljs.core.hash_map("\ufdd0'line", 41))), cljs.core.hash_map("\ufdd0'line", 41)), "type"), cljs.core.hash_map("\ufdd0'line", 41))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, jsrefact.core.ast_properties.call(null, cljs.core.deref.call(null, jsrefact.core.progrm))), "type")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-properties", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm")), cljs.core.hash_map("\ufdd0'line", 43))), cljs.core.hash_map("\ufdd0'line", 43)), "type"), cljs.core.hash_map("\ufdd0'line", 43))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.count.call(null, jsrefact.core.ast_properties.call(null, cljs.core.deref.call(null, jsrefact.core.progrm))), 3)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-properties", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm")), cljs.core.hash_map("\ufdd0'line", 45))), cljs.core.hash_map("\ufdd0'line", 45)), 3), cljs.core.hash_map("\ufdd0'line", 45))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_kind.call(null, jsrefact.tests.asttest.parsedTest), "Program")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-kind", "\ufdd1'parsedTest"), cljs.core.hash_map("\ufdd0'line", 47)), "Program"), cljs.core.hash_map("\ufdd0'line", 47))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_kind.call(null, cljs.core.deref.call(null, jsrefact.core.progrm)), "VariableDeclaration")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-kind", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm")), cljs.core.hash_map("\ufdd0'line", 49)), "VariableDeclaration"), cljs.core.hash_map("\ufdd0'line", 49))))].join(""));
   }
   var fakeAst = 5;
   if(cljs.core.not_EQ_.call(null, jsrefact.core.ast_QMARK_.call(null, fakeAst), true)) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'not=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast?", "\ufdd1'fakeAst"), cljs.core.hash_map("\ufdd0'line", 26)), true), cljs.core.hash_map("\ufdd0'line", 26))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'not=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast?", "\ufdd1'fakeAst"), cljs.core.hash_map("\ufdd0'line", 52)), true), cljs.core.hash_map("\ufdd0'line", 52))))].join(""));
   }
   if(cljs.core._EQ_.call(null, jsrefact.core.ast_QMARK_.call(null, jsrefact.tests.asttest.parsedTest), true)) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast?", "\ufdd1'parsedTest"), cljs.core.hash_map("\ufdd0'line", 27)), true), cljs.core.hash_map("\ufdd0'line", 27))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast?", "\ufdd1'parsedTest"), cljs.core.hash_map("\ufdd0'line", 53)), true), cljs.core.hash_map("\ufdd0'line", 53))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_QMARK_.call(null, cljs.core.deref.call(null, jsrefact.core.progrm)))) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast?", cljs.core.list("\ufdd1'clojure.core/deref", "\ufdd1'progrm")), cljs.core.hash_map("\ufdd0'line", 55))), cljs.core.hash_map("\ufdd0'line", 55))))].join(""));
   }
   if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
     var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
@@ -34184,8 +34286,29 @@ jsrefact.tests.asttest.run = function run() {
     }
   }())).type, "VariableDeclaration")) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'.-type", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 29))), cljs.core.hash_map("\ufdd0'line", 29))), cljs.core.hash_map("\ufdd0'line", 
-    29))), cljs.core.hash_map("\ufdd0'line", 29)), "VariableDeclaration"), cljs.core.hash_map("\ufdd0'line", 29))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'.-type", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 57))), cljs.core.hash_map("\ufdd0'line", 57))), cljs.core.hash_map("\ufdd0'line", 
+    57))), cljs.core.hash_map("\ufdd0'line", 57)), "VariableDeclaration"), cljs.core.hash_map("\ufdd0'line", 57))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.program.call(null, _QMARK_p)), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_p), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), cljs.core.deref.call(null, jsrefact.core.progrm))) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 60))), cljs.core.hash_map("\ufdd0'line", 60))), cljs.core.hash_map("\ufdd0'line", 60)), cljs.core.list("\ufdd1'clojure.core/deref", 
+    "\ufdd1'progrm")), cljs.core.hash_map("\ufdd0'line", 60))))].join(""));
   }
   if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
     var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
@@ -34211,8 +34334,175 @@ jsrefact.tests.asttest.run = function run() {
     }
   }())), "declarations")) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?prop"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?node", "\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?node"), cljs.core.hash_map("\ufdd0'line", 36)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", 
-    "\ufdd1'?prop", "\ufdd1'?node", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 37))), cljs.core.hash_map("\ufdd0'line", 35))), cljs.core.hash_map("\ufdd0'line", 34))), cljs.core.hash_map("\ufdd0'line", 34)), "declarations"), cljs.core.hash_map("\ufdd0'line", 34))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?prop"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?node", "\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?node"), cljs.core.hash_map("\ufdd0'line", 65)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", 
+    "\ufdd1'?prop", "\ufdd1'?node", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 66))), cljs.core.hash_map("\ufdd0'line", 64))), cljs.core.hash_map("\ufdd0'line", 63))), cljs.core.hash_map("\ufdd0'line", 63)), "declarations"), cljs.core.hash_map("\ufdd0'line", 63))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_kind.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_va = cljs.core.logic.lvar.call(null, "\ufdd1'?va");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              var _QMARK_pr = cljs.core.logic.lvar.call(null, "\ufdd1'?pr");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_no)), jsrefact.core.child.call(null, _QMARK_pr, _QMARK_no, _QMARK_va))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_va), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }()))), "VariableDeclarator")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-kind", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?va"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?no", "\ufdd1'?pr"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?no"), cljs.core.hash_map("\ufdd0'line", 
+    71)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", "\ufdd1'?pr", "\ufdd1'?no", "\ufdd1'?va"), cljs.core.hash_map("\ufdd0'line", 72))), cljs.core.hash_map("\ufdd0'line", 70))), cljs.core.hash_map("\ufdd0'line", 69))), cljs.core.hash_map("\ufdd0'line", 69))), cljs.core.hash_map("\ufdd0'line", 69)), "VariableDeclarator"), cljs.core.hash_map("\ufdd0'line", 69))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_pr = cljs.core.logic.lvar.call(null, "\ufdd1'?pr");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              var _QMARK_va = cljs.core.logic.lvar.call(null, "\ufdd1'?va");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.one);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.child.call(null, _QMARK_pr, _QMARK_no, _QMARK_va))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_pr), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), "id")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?pr"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?no", "\ufdd1'?va"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'one"), cljs.core.hash_map("\ufdd0'line", 77)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", 
+    "\ufdd1'?pr", "\ufdd1'?no", "\ufdd1'?va"), cljs.core.hash_map("\ufdd0'line", 78))), cljs.core.hash_map("\ufdd0'line", 76))), cljs.core.hash_map("\ufdd0'line", 75))), cljs.core.hash_map("\ufdd0'line", 75)), "id"), cljs.core.hash_map("\ufdd0'line", 75))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_pr = cljs.core.logic.lvar.call(null, "\ufdd1'?pr");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              var _QMARK_va = cljs.core.logic.lvar.call(null, "\ufdd1'?va");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.sec);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.child.call(null, _QMARK_pr, _QMARK_no, _QMARK_va))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_pr), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }()), cljs.core.List.EMPTY)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?pr"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?no", "\ufdd1'?va"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'sec"), cljs.core.hash_map("\ufdd0'line", 82)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", "\ufdd1'?pr", 
+    "\ufdd1'?no", "\ufdd1'?va"), cljs.core.hash_map("\ufdd0'line", 83))), cljs.core.hash_map("\ufdd0'line", 81))), cljs.core.hash_map("\ufdd0'line", 80)), cljs.core.List.EMPTY), cljs.core.hash_map("\ufdd0'line", 80))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_va = cljs.core.logic.lvar.call(null, "\ufdd1'?va");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              var _QMARK_pr = cljs.core.logic.lvar.call(null, "\ufdd1'?pr");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.sec);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.child.call(null, _QMARK_pr, _QMARK_no, _QMARK_va))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_va), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }()), cljs.core.List.EMPTY)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?va"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?no", "\ufdd1'?pr"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'sec"), cljs.core.hash_map("\ufdd0'line", 87)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", "\ufdd1'?pr", 
+    "\ufdd1'?no", "\ufdd1'?va"), cljs.core.hash_map("\ufdd0'line", 88))), cljs.core.hash_map("\ufdd0'line", 86))), cljs.core.hash_map("\ufdd0'line", 85)), cljs.core.List.EMPTY), cljs.core.hash_map("\ufdd0'line", 85))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, jsrefact.core.ast_kind.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_va = cljs.core.logic.lvar.call(null, "\ufdd1'?va");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              var _QMARK_pr = cljs.core.logic.lvar.call(null, "\ufdd1'?pr");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.one);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.child.call(null, _QMARK_pr, _QMARK_no, _QMARK_va))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_va), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }()))), "Identifier")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'ast-kind", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?va"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?no", "\ufdd1'?pr"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'one"), 
+    cljs.core.hash_map("\ufdd0'line", 92)), cljs.core.with_meta(cljs.core.list("\ufdd1'child", "\ufdd1'?pr", "\ufdd1'?no", "\ufdd1'?va"), cljs.core.hash_map("\ufdd0'line", 93))), cljs.core.hash_map("\ufdd0'line", 91))), cljs.core.hash_map("\ufdd0'line", 90))), cljs.core.hash_map("\ufdd0'line", 90))), cljs.core.hash_map("\ufdd0'line", 90)), "Identifier"), cljs.core.hash_map("\ufdd0'line", 90))))].join(""));
   }
   if(cljs.core._EQ_.call(null, cljs.core.count.call(null, cljs.core.doall.call(null, function() {
     var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
@@ -34238,8 +34528,8 @@ jsrefact.tests.asttest.run = function run() {
     }
   }())), 3)) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?props"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p", "\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 45)), cljs.core.with_meta(cljs.core.list("\ufdd1'has", 
-    "\ufdd1'?props", "\ufdd1'?p", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 46))), cljs.core.hash_map("\ufdd0'line", 44))), cljs.core.hash_map("\ufdd0'line", 43))), cljs.core.hash_map("\ufdd0'line", 43)), 3), cljs.core.hash_map("\ufdd0'line", 42))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?props"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p", "\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 102)), cljs.core.with_meta(cljs.core.list("\ufdd1'has", 
+    "\ufdd1'?props", "\ufdd1'?p", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 103))), cljs.core.hash_map("\ufdd0'line", 101))), cljs.core.hash_map("\ufdd0'line", 100))), cljs.core.hash_map("\ufdd0'line", 100)), 3), cljs.core.hash_map("\ufdd0'line", 99))))].join(""));
   }
   if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
     var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
@@ -34265,10 +34555,402 @@ jsrefact.tests.asttest.run = function run() {
     }
   }())), "type")) {
   }else {
-    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?props"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p", "\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 51)), cljs.core.with_meta(cljs.core.list("\ufdd1'has", 
-    "\ufdd1'?props", "\ufdd1'?p", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 52))), cljs.core.hash_map("\ufdd0'line", 50))), cljs.core.hash_map("\ufdd0'line", 49))), cljs.core.hash_map("\ufdd0'line", 49)), "type"), cljs.core.hash_map("\ufdd0'line", 48))))].join(""));
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?props"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p", "\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 109)), cljs.core.with_meta(cljs.core.list("\ufdd1'has", 
+    "\ufdd1'?props", "\ufdd1'?p", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 110))), cljs.core.hash_map("\ufdd0'line", 108))), cljs.core.hash_map("\ufdd0'line", 107))), cljs.core.hash_map("\ufdd0'line", 107)), "type"), cljs.core.hash_map("\ufdd0'line", 106))))].join(""));
   }
-  return jsrefact.core.js_print.call(null, "AST Unit tests finished.")
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_value = cljs.core.logic.lvar.call(null, "\ufdd1'?value");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+              var _QMARK_props = cljs.core.logic.lvar.call(null, "\ufdd1'?props");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_p)), jsrefact.core.has.call(null, _QMARK_props, _QMARK_p, _QMARK_value))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_value), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), "VariableDeclaration")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p", "\ufdd1'?props"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 116)), cljs.core.with_meta(cljs.core.list("\ufdd1'has", 
+    "\ufdd1'?props", "\ufdd1'?p", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 117))), cljs.core.hash_map("\ufdd0'line", 115))), cljs.core.hash_map("\ufdd0'line", 114))), cljs.core.hash_map("\ufdd0'line", 114)), "VariableDeclaration"), cljs.core.hash_map("\ufdd0'line", 113))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.instance_QMARK_.call(null, Array, cljs.core.second.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_value = cljs.core.logic.lvar.call(null, "\ufdd1'?value");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+              var _QMARK_props = cljs.core.logic.lvar.call(null, "\ufdd1'?props");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_p)), jsrefact.core.has.call(null, _QMARK_props, _QMARK_p, _QMARK_value))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_value), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }()))), true)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'instance?", "\ufdd1'js/Array", cljs.core.with_meta(cljs.core.list("\ufdd1'second", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?value"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p", "\ufdd1'?props"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", 
+    "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 123)), cljs.core.with_meta(cljs.core.list("\ufdd1'has", "\ufdd1'?props", "\ufdd1'?p", "\ufdd1'?value"), cljs.core.hash_map("\ufdd0'line", 124))), cljs.core.hash_map("\ufdd0'line", 122))), cljs.core.hash_map("\ufdd0'line", 121))), cljs.core.hash_map("\ufdd0'line", 121))), cljs.core.hash_map("\ufdd0'line", 121)), true), cljs.core.hash_map("\ufdd0'line", 120))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.count.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_chld = cljs.core.logic.lvar.call(null, "\ufdd1'?chld");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_p)), jsrefact.core.child_PLUS_.call(null, _QMARK_p, _QMARK_chld))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_chld), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), 3)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?chld"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 130)), cljs.core.with_meta(cljs.core.list("\ufdd1'child+", 
+    "\ufdd1'?p", "\ufdd1'?chld"), cljs.core.hash_map("\ufdd0'line", 131))), cljs.core.hash_map("\ufdd0'line", 129))), cljs.core.hash_map("\ufdd0'line", 128))), cljs.core.hash_map("\ufdd0'line", 128)), 3), cljs.core.hash_map("\ufdd0'line", 128))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.last.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_chld = cljs.core.logic.lvar.call(null, "\ufdd1'?chld");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_p)), jsrefact.core.child_PLUS_.call(null, _QMARK_p, _QMARK_chld))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_chld), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())).type, "Literal")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'.-type", cljs.core.with_meta(cljs.core.list("\ufdd1'last", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?chld"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 
+    136)), cljs.core.with_meta(cljs.core.list("\ufdd1'child+", "\ufdd1'?p", "\ufdd1'?chld"), cljs.core.hash_map("\ufdd0'line", 137))), cljs.core.hash_map("\ufdd0'line", 135))), cljs.core.hash_map("\ufdd0'line", 134))), cljs.core.hash_map("\ufdd0'line", 134))), cljs.core.hash_map("\ufdd0'line", 134)), "Literal"), cljs.core.hash_map("\ufdd0'line", 134))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.second.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_chld = cljs.core.logic.lvar.call(null, "\ufdd1'?chld");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_p)), jsrefact.core.child_PLUS_.call(null, _QMARK_p, _QMARK_chld))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_chld), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())).type, "Identifier")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'.-type", cljs.core.with_meta(cljs.core.list("\ufdd1'second", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?chld"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 
+    142)), cljs.core.with_meta(cljs.core.list("\ufdd1'child+", "\ufdd1'?p", "\ufdd1'?chld"), cljs.core.hash_map("\ufdd0'line", 143))), cljs.core.hash_map("\ufdd0'line", 141))), cljs.core.hash_map("\ufdd0'line", 140))), cljs.core.hash_map("\ufdd0'line", 140))), cljs.core.hash_map("\ufdd0'line", 140)), "Identifier"), cljs.core.hash_map("\ufdd0'line", 140))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_chld = cljs.core.logic.lvar.call(null, "\ufdd1'?chld");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_p = cljs.core.logic.lvar.call(null, "\ufdd1'?p");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.program.call(null, _QMARK_p)), jsrefact.core.child_PLUS_.call(null, _QMARK_p, _QMARK_chld))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_chld), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())).type, "VariableDeclarator")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'.-type", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?chld"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?p"]), cljs.core.with_meta(cljs.core.list("\ufdd1'program", "\ufdd1'?p"), cljs.core.hash_map("\ufdd0'line", 
+    148)), cljs.core.with_meta(cljs.core.list("\ufdd1'child+", "\ufdd1'?p", "\ufdd1'?chld"), cljs.core.hash_map("\ufdd0'line", 149))), cljs.core.hash_map("\ufdd0'line", 147))), cljs.core.hash_map("\ufdd0'line", 146))), cljs.core.hash_map("\ufdd0'line", 146))), cljs.core.hash_map("\ufdd0'line", 146)), "VariableDeclarator"), cljs.core.hash_map("\ufdd0'line", 146))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.count.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_node = cljs.core.logic.lvar.call(null, "\ufdd1'?node");
+              return cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.ast.call(null, _QMARK_kind, _QMARK_node))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_kind), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), 4)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?kind"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?node"]), cljs.core.with_meta(cljs.core.list("\ufdd1'ast", "\ufdd1'?kind", "\ufdd1'?node"), cljs.core.hash_map("\ufdd0'line", 155))), cljs.core.hash_map("\ufdd0'line", 
+    154))), cljs.core.hash_map("\ufdd0'line", 153))), cljs.core.hash_map("\ufdd0'line", 153)), 4), cljs.core.hash_map("\ufdd0'line", 153))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_node = cljs.core.logic.lvar.call(null, "\ufdd1'?node");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.ast.call(null, "Identifier", _QMARK_node)), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_node), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())).type, "Identifier")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'.-type", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?node"]), cljs.core.with_meta(cljs.core.list("\ufdd1'ast", "Identifier", "\ufdd1'?node"), cljs.core.hash_map("\ufdd0'line", 159))), cljs.core.hash_map("\ufdd0'line", 158))), cljs.core.hash_map("\ufdd0'line", 
+    158))), cljs.core.hash_map("\ufdd0'line", 158)), "Identifier"), cljs.core.hash_map("\ufdd0'line", 158))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.count.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_node = cljs.core.logic.lvar.call(null, "\ufdd1'?node");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, jsrefact.core.ast.call(null, "Identifier", _QMARK_node)), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_node), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), 1)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?node"]), cljs.core.with_meta(cljs.core.list("\ufdd1'ast", "Identifier", "\ufdd1'?node"), cljs.core.hash_map("\ufdd0'line", 163))), cljs.core.hash_map("\ufdd0'line", 162))), cljs.core.hash_map("\ufdd0'line", 162)), 1), cljs.core.hash_map("\ufdd0'line", 
+    162))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_node = cljs.core.logic.lvar.call(null, "\ufdd1'?node");
+              return cljs.core.logic._bind.call(null, a__2897__auto____$1, jsrefact.core.ast.call(null, _QMARK_kind, _QMARK_node))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_kind), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), "VariableDeclaration")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?kind"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?node"]), cljs.core.with_meta(cljs.core.list("\ufdd1'ast", "\ufdd1'?kind", "\ufdd1'?node"), cljs.core.hash_map("\ufdd0'line", 168))), cljs.core.hash_map("\ufdd0'line", 
+    167))), cljs.core.hash_map("\ufdd0'line", 166))), cljs.core.hash_map("\ufdd0'line", 166)), "VariableDeclaration"), cljs.core.hash_map("\ufdd0'line", 166))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.count.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_nodeOut = cljs.core.logic.lvar.call(null, "\ufdd1'?nodeOut");
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.one);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.ast_with_input.call(null, _QMARK_kind, _QMARK_no, _QMARK_nodeOut))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_kind), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), 3)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?kind"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?nodeOut", "\ufdd1'?no"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'one"), cljs.core.hash_map("\ufdd0'line", 175)), 
+    cljs.core.with_meta(cljs.core.list("\ufdd1'ast-with-input", "\ufdd1'?kind", "\ufdd1'?no", "\ufdd1'?nodeOut"), cljs.core.hash_map("\ufdd0'line", 176))), cljs.core.hash_map("\ufdd0'line", 174))), cljs.core.hash_map("\ufdd0'line", 173))), cljs.core.hash_map("\ufdd0'line", 173)), 3), cljs.core.hash_map("\ufdd0'line", 173))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_nodeOut = cljs.core.logic.lvar.call(null, "\ufdd1'?nodeOut");
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.one);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.ast_with_input.call(null, _QMARK_kind, _QMARK_no, _QMARK_nodeOut))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_kind), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), "VariableDeclarator")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?kind"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?nodeOut", "\ufdd1'?no"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'one"), cljs.core.hash_map("\ufdd0'line", 181)), 
+    cljs.core.with_meta(cljs.core.list("\ufdd1'ast-with-input", "\ufdd1'?kind", "\ufdd1'?no", "\ufdd1'?nodeOut"), cljs.core.hash_map("\ufdd0'line", 182))), cljs.core.hash_map("\ufdd0'line", 180))), cljs.core.hash_map("\ufdd0'line", 179))), cljs.core.hash_map("\ufdd0'line", 179)), "VariableDeclarator"), cljs.core.hash_map("\ufdd0'line", 179))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.first.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_nodeOut = cljs.core.logic.lvar.call(null, "\ufdd1'?nodeOut");
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.sec);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.ast_with_input.call(null, _QMARK_kind, _QMARK_no, _QMARK_nodeOut))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_kind), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), "Literal")) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'first", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?kind"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?nodeOut", "\ufdd1'?no"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'sec"), cljs.core.hash_map("\ufdd0'line", 187)), 
+    cljs.core.with_meta(cljs.core.list("\ufdd1'ast-with-input", "\ufdd1'?kind", "\ufdd1'?no", "\ufdd1'?nodeOut"), cljs.core.hash_map("\ufdd0'line", 188))), cljs.core.hash_map("\ufdd0'line", 186))), cljs.core.hash_map("\ufdd0'line", 185))), cljs.core.hash_map("\ufdd0'line", 185)), "Literal"), cljs.core.hash_map("\ufdd0'line", 185))))].join(""));
+  }
+  if(cljs.core._EQ_.call(null, cljs.core.count.call(null, cljs.core.doall.call(null, function() {
+    var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null, new cljs.core.logic.Inc(function() {
+      return function(a__2897__auto__) {
+        return new cljs.core.logic.Inc(function() {
+          var _QMARK_kind = cljs.core.logic.lvar.call(null, "\ufdd1'?kind");
+          return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto__, function(a__2897__auto____$1) {
+            return new cljs.core.logic.Inc(function() {
+              var _QMARK_nodeOut = cljs.core.logic.lvar.call(null, "\ufdd1'?nodeOut");
+              var _QMARK_no = cljs.core.logic.lvar.call(null, "\ufdd1'?no");
+              return cljs.core.logic._bind.call(null, cljs.core.logic._bind.call(null, a__2897__auto____$1, function(a__2885__auto__) {
+                var temp__3971__auto__ = cljs.core.logic._unify.call(null, a__2885__auto__, _QMARK_no, jsrefact.tests.asttest.sec);
+                if(cljs.core.truth_(temp__3971__auto__)) {
+                  var b__2886__auto__ = temp__3971__auto__;
+                  return b__2886__auto__
+                }else {
+                  return null
+                }
+              }), jsrefact.core.ast_with_input.call(null, _QMARK_kind, _QMARK_no, _QMARK_nodeOut))
+            })
+          }), function(a__2906__auto__) {
+            return cljs.core.cons.call(null, cljs.core.logic._reify.call(null, a__2906__auto__, _QMARK_kind), cljs.core.List.EMPTY)
+          })
+        })
+      }.call(null, cljs.core.logic.empty_s)
+    }));
+    if(false) {
+      return cljs.core.take.call(null, false, xs__2905__auto__)
+    }else {
+      return xs__2905__auto__
+    }
+  }())), 1)) {
+  }else {
+    throw new Error([cljs.core.str("Assert failed: "), cljs.core.str(cljs.core.pr_str.call(null, cljs.core.with_meta(cljs.core.list("\ufdd1'=", cljs.core.with_meta(cljs.core.list("\ufdd1'count", cljs.core.with_meta(cljs.core.list("\ufdd1'l/run*", cljs.core.vec(["\ufdd1'?kind"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/fresh", cljs.core.vec(["\ufdd1'?nodeOut", "\ufdd1'?no"]), cljs.core.with_meta(cljs.core.list("\ufdd1'l/==", "\ufdd1'?no", "\ufdd1'sec"), cljs.core.hash_map("\ufdd0'line", 193)), 
+    cljs.core.with_meta(cljs.core.list("\ufdd1'ast-with-input", "\ufdd1'?kind", "\ufdd1'?no", "\ufdd1'?nodeOut"), cljs.core.hash_map("\ufdd0'line", 194))), cljs.core.hash_map("\ufdd0'line", 192))), cljs.core.hash_map("\ufdd0'line", 191))), cljs.core.hash_map("\ufdd0'line", 191)), 1), cljs.core.hash_map("\ufdd0'line", 191))))].join(""));
+  }
+  return cljs.core.println.call(null, "AST Unit tests finished.")
 };
 goog.provide("jsrefact.tests");
 goog.require("cljs.core");
@@ -34276,7 +34958,7 @@ goog.require("jsrefact.tests.asttest");
 jsrefact.tests.success = 0;
 jsrefact.tests.run = function run() {
   jsrefact.tests.asttest.run.call(null);
-  console.log("All test succeeded.");
+  cljs.core.println.call(null, "All test succeeded.");
   return jsrefact.tests.success
 };
 goog.exportSymbol("jsrefact.tests.run", jsrefact.tests.run);

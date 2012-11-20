@@ -4,7 +4,7 @@
 	(:refer-clojure :exclude [==])
   	(:use-macros
    		[cljs.core.logic.macros
-    		:only [run run* == conde conda condu fresh defne matche all project trace-lvars]])
+    		:only [run run* == conde conda condu fresh defne matche all project trace-lvars log]])
   	(:require-macros [cljs.core.logic.macros :as l]
                    [clojure.tools.macro :as mu])
   	(:use
@@ -23,28 +23,26 @@
   [arg]
 	(.log js/console arg))
 
-;(set! *print-fn* js-print)
+(defn
+  lprint
+  "Logical browser console print"
+  [?val]
+  (l/project [?val]
+    (l/== nil (js-print ?val))))
 
-; Function to test unit testing
-(defn 
-  add-some-numbers 
-  [& numbers]
-  (apply + numbers))
-
+(set! *print-fn* js-print)
 
 ; Parsing Javascript using the Esprima parser
 ; http://esprima.org/
 (def esprimaParser js/esprima)
 ;(js-print (.-version y ))
 (def parsed (.parse esprimaParser " var x = 42"))
-;(js-print parsed)
-;(def progrm (.pop (.-body parsed)))
+
 (def progrm (atom (.pop (.-body parsed))))
 
-
-;(js-print @progrm)
-;(js-print (.keys (js* "Object") "test"))
-;(js-print (.keys js/Object program))
+;; Debug prints
+;(js-print parsed)
+;js-print @progrm)
 
 
 
@@ -69,9 +67,6 @@
   [ast]
   (ast-property-value ast "type"))
 
-;(js-print (ast-kind parsed))
-;(js-print (=  nil (aget (js* "5") "type")))
-
 (defn
   ast?
   "Check for an AST (if it has a 'type' property) "
@@ -83,9 +78,9 @@
   program
   "Reifies ?node to the javascript program's ast object
 
-  Example: (js-print (l/run* 
-                       [?p]
-                       (program ?p)))
+  Example: (l/run* 
+             [?p]
+             (program ?p))
   "
   [?node]
   (l/all 
@@ -97,7 +92,8 @@
 (defn
   ast
   "Reification of the relation between an ast node ?node
-    and its kind ?kind"
+    and its kind ?kind
+    Uses program root"
   [?kind ?node]
   (l/fresh [?root]
     (program ?root)
@@ -106,6 +102,21 @@
       [(child+ ?root ?node)])
     (l/project [?node]
       (l/== ?kind (ast-kind ?node)))
+    ))
+
+(defn
+  ast-with-input
+  "Reification of the relation between an ast node ?node
+    and its kind ?kind
+    Uses ?nodeIn as input ast"
+  [?kind ?nodeIn ?nodeOut]
+  (l/fresh [?root]
+    (l/== ?root ?nodeIn)
+    (l/conde
+      [(l/== ?root ?nodeOut)]
+      [(child+ ?root ?nodeOut)])
+    (l/project [?nodeOut]
+      (l/== ?kind (ast-kind ?nodeOut)))
     ))
 
 
@@ -127,55 +138,35 @@
       (l/== ?value (ast-property-value ?node ?property)))
     ))
 
-(defn
-  lprint
-  ""
-  [?val]
-  (l/project [?val]
-    (l/== nil (js-print ?val))))
 
-(defn
+(defn 
   child
   "Reification of the relation between an ast ?node
     and its astnode ?value that has a property 
     named ?property"
-  [?property ?node ?value]
-  (l/fresh [?actual-value]
-    (has ?property ?node ?actual-value)
-    (lprint ?actual-value)
-    (l/project [?actual-value]
-      (l/conda
-        [(l/== true (ast? ?actual-value))
-          (l/== ?value ?actual-value)]
-        [(l/== true (instance? js/Array ?actual-value))
-        
-         (membero ?value (seq ?actual-value))])
-      )
-    (lprint ?value)))
-
-;(def cnt 0)
-;(defn inccnt [] (def cnt (inc cnt)))
-;(js-print (true? (inccnt)))
+  [?prop ?node ?val]
+  (l/fresh [?foundvals]
+    (has ?prop ?node ?foundvals)
+    (l/project [?foundvals]
+      (l/log ?foundvals)
+      (l/conde
+        [(l/== true (ast? ?foundvals))
+         (l/log "1" ?foundvals)
+         (l/== ?val ?foundvals)]
+        [(l/== true (instance? js/Array ?foundvals))
+         (l/log "2" ?foundvals)
+         (fresh [?s]
+          (l/== ?s (seq ?foundvals))
+          (membero ?val ?s))])
+  )))
 
 
 (defn
   child+
   "?child is contained within ?node at a certain depth"
   [?node ?child]
-  ;(js-print cnt)
-  ;(inccnt)
   (l/fresh [?prop ?ch]
     (child ?prop ?node ?ch)
-    (l/project [?ch]
-      (l/== nil (js-print ?ch)))
     (l/conde
       [(l/== ?child ?ch)]
       [(child+ ?ch ?child)])))
-
-;(js-print (instance? js/Object 42))
-
-; (l/run* [?child]
-;      (l/fresh [?p]
-;        (program ?p)
-;        (child+ ?p ?child)))
-

@@ -6,5 +6,5 @@
 (defn ^:export run []
   (ast/run)
   ; ... list all tests here
-  (.log js/console "All test succeeded.")
+  (println "All test succeeded.")
   success)
