@@ -36,13 +36,14 @@
 ; http://esprima.org/
 (def esprimaParser js/esprima)
 ;(js-print (.-version y ))
-(def parsed (.parse esprimaParser " var x = 42"))
+;(def parsed (.parse esprimaParser " var x = 42"))
 
-(def progrm (atom (.pop (.-body parsed))))
+(def parsed (.parse esprimaParser "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;"))
+(def progrm (atom (.-body parsed)))
 
 ;; Debug prints
-;(js-print parsed)
-;js-print @progrm)
+(js-print parsed)
+(js-print @progrm)
 
 
 
@@ -84,7 +85,9 @@
   "
   [?node]
   (l/all 
-    (l/== ?node @progrm)))
+    ;(l/== ?node @progrm)
+    (membero ?node (seq @progrm))
+    ))
 
 ; Forward declaration of child+
 (declare child+)

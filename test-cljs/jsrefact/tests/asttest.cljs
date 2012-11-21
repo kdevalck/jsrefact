@@ -7,7 +7,7 @@
 
 ; Parse a sample program
 (def parsedTest (.parse esprimaParser "var x = 43"))
-(def progrmTest (.pop (.-body parsedTest)))
+(def progrmTest (.-body parsedTest))
 ; Swap the progrm from jsrefact.core to the programTest
 ;  parsed inside jsrefact.tests.asttest to provide a 
 ;  ast object to the unittests.
@@ -28,36 +28,30 @@
 
   (assert (= (ast-property-value parsedTest "type") "Program"))
 
-  (assert (= (ast-property-value @progrm "type") "VariableDeclaration"))
+  (assert (= (ast-property-value (first @progrm) "type") "VariableDeclaration"))
 
   (assert (= (instance? js/Array (ast-property-value @progrm "declarations")) true))
 
-  (assert (= (ast-property-value 
-                (.-init (first 
-                  (ast-property-value @progrm "declarations")))
-                   "value")
-            43))
-
   (assert (= (first (ast-properties parsedTest)) "type"))
 
-  (assert (= (first (ast-properties @progrm)) "type"))
+  (assert (= (first (ast-properties (first @progrm))) "type"))
 
-  (assert (= (count (ast-properties @progrm)) 3))
+  (assert (= (count (ast-properties (first @progrm))) 3))
 
-  (assert (= (ast-kind parsedTest) "Program"))
+  (assert (= (ast-kind parsedTest) "Program")) 
 
-  (assert (= (ast-kind @progrm) "VariableDeclaration"))
+  (assert (= (ast-kind (first @progrm)) "VariableDeclaration"))
            
   (let [fakeAst 5]
   	(assert (not= (ast? fakeAst) true))
   	(assert (= (ast? parsedTest) true)))
 
-  (assert (= (ast? @progrm)))
+  (assert (= (ast? (first @progrm)) true))
 
   (assert (= (.-type (first (l/run* [?p] (program ?p)))) "VariableDeclaration"))
 
   ; program
-  (assert (= (first(l/run* [?p] (program ?p))) @progrm))
+  (assert (= (first (l/run* [?p] (program ?p))) (first @progrm))) 
 
   ; child
   (assert (= (first (l/run* [?prop]

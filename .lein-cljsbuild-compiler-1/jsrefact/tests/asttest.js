@@ -3,7 +3,7 @@ goog.require('cljs.core');
 goog.require('jsrefact.core');
 goog.require('jsrefact.core');
 jsrefact.tests.asttest.parsedTest = jsrefact.core.esprimaParser.parse("var x = 43");
-jsrefact.tests.asttest.progrmTest = jsrefact.tests.asttest.parsedTest.body.pop();
+jsrefact.tests.asttest.progrmTest = jsrefact.tests.asttest.parsedTest.body;
 cljs.core.swap_BANG_.call(null,jsrefact.core.progrm,(function (progrmT){
 return jsrefact.tests.asttest.progrmTest;
 }));
@@ -65,50 +65,46 @@ if(cljs.core._EQ_.call(null,jsrefact.core.ast_property_value.call(null,jsrefact.
 {} else
 {throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-property-value","\uFDD1'parsedTest","type"),cljs.core.hash_map("\uFDD0'line",29)),"Program"),cljs.core.hash_map("\uFDD0'line",29))))].join('')));
 }
-if(cljs.core._EQ_.call(null,jsrefact.core.ast_property_value.call(null,cljs.core.deref.call(null,jsrefact.core.progrm),"type"),"VariableDeclaration"))
+if(cljs.core._EQ_.call(null,jsrefact.core.ast_property_value.call(null,cljs.core.first.call(null,cljs.core.deref.call(null,jsrefact.core.progrm)),"type"),"VariableDeclaration"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-property-value",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm"),"type"),cljs.core.hash_map("\uFDD0'line",31)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",31))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-property-value",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",31)),"type"),cljs.core.hash_map("\uFDD0'line",31)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",31))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.instance_QMARK_.call(null,Array,jsrefact.core.ast_property_value.call(null,cljs.core.deref.call(null,jsrefact.core.progrm),"declarations")),true))
 {} else
 {throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'instance?","\uFDD1'js/Array",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-property-value",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm"),"declarations"),cljs.core.hash_map("\uFDD0'line",33))),cljs.core.hash_map("\uFDD0'line",33)),true),cljs.core.hash_map("\uFDD0'line",33))))].join('')));
 }
-if(cljs.core._EQ_.call(null,jsrefact.core.ast_property_value.call(null,cljs.core.first.call(null,jsrefact.core.ast_property_value.call(null,cljs.core.deref.call(null,jsrefact.core.progrm),"declarations")).init,"value"),43))
-{} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-property-value",cljs.core.with_meta(cljs.core.list("\uFDD1'.-init",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-property-value",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm"),"declarations"),cljs.core.hash_map("\uFDD0'line",37))),cljs.core.hash_map("\uFDD0'line",36))),cljs.core.hash_map("\uFDD0'line",36)),"value"),cljs.core.hash_map("\uFDD0'line",35)),43),cljs.core.hash_map("\uFDD0'line",35))))].join('')));
-}
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,jsrefact.core.ast_properties.call(null,jsrefact.tests.asttest.parsedTest)),"type"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-properties","\uFDD1'parsedTest"),cljs.core.hash_map("\uFDD0'line",41))),cljs.core.hash_map("\uFDD0'line",41)),"type"),cljs.core.hash_map("\uFDD0'line",41))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-properties","\uFDD1'parsedTest"),cljs.core.hash_map("\uFDD0'line",35))),cljs.core.hash_map("\uFDD0'line",35)),"type"),cljs.core.hash_map("\uFDD0'line",35))))].join('')));
 }
-if(cljs.core._EQ_.call(null,cljs.core.first.call(null,jsrefact.core.ast_properties.call(null,cljs.core.deref.call(null,jsrefact.core.progrm))),"type"))
+if(cljs.core._EQ_.call(null,cljs.core.first.call(null,jsrefact.core.ast_properties.call(null,cljs.core.first.call(null,cljs.core.deref.call(null,jsrefact.core.progrm)))),"type"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-properties",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",43))),cljs.core.hash_map("\uFDD0'line",43)),"type"),cljs.core.hash_map("\uFDD0'line",43))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-properties",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",37))),cljs.core.hash_map("\uFDD0'line",37))),cljs.core.hash_map("\uFDD0'line",37)),"type"),cljs.core.hash_map("\uFDD0'line",37))))].join('')));
 }
-if(cljs.core._EQ_.call(null,cljs.core.count.call(null,jsrefact.core.ast_properties.call(null,cljs.core.deref.call(null,jsrefact.core.progrm))),3))
+if(cljs.core._EQ_.call(null,cljs.core.count.call(null,jsrefact.core.ast_properties.call(null,cljs.core.first.call(null,cljs.core.deref.call(null,jsrefact.core.progrm)))),3))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-properties",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",45))),cljs.core.hash_map("\uFDD0'line",45)),3),cljs.core.hash_map("\uFDD0'line",45))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-properties",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",39))),cljs.core.hash_map("\uFDD0'line",39))),cljs.core.hash_map("\uFDD0'line",39)),3),cljs.core.hash_map("\uFDD0'line",39))))].join('')));
 }
 if(cljs.core._EQ_.call(null,jsrefact.core.ast_kind.call(null,jsrefact.tests.asttest.parsedTest),"Program"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind","\uFDD1'parsedTest"),cljs.core.hash_map("\uFDD0'line",47)),"Program"),cljs.core.hash_map("\uFDD0'line",47))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind","\uFDD1'parsedTest"),cljs.core.hash_map("\uFDD0'line",41)),"Program"),cljs.core.hash_map("\uFDD0'line",41))))].join('')));
 }
-if(cljs.core._EQ_.call(null,jsrefact.core.ast_kind.call(null,cljs.core.deref.call(null,jsrefact.core.progrm)),"VariableDeclaration"))
+if(cljs.core._EQ_.call(null,jsrefact.core.ast_kind.call(null,cljs.core.first.call(null,cljs.core.deref.call(null,jsrefact.core.progrm))),"VariableDeclaration"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",49)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",49))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",43))),cljs.core.hash_map("\uFDD0'line",43)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",43))))].join('')));
 }
 var fakeAst = 5;
 if(cljs.core.not_EQ_.call(null,jsrefact.core.ast_QMARK_.call(null,fakeAst),true))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'not=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast?","\uFDD1'fakeAst"),cljs.core.hash_map("\uFDD0'line",52)),true),cljs.core.hash_map("\uFDD0'line",52))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'not=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast?","\uFDD1'fakeAst"),cljs.core.hash_map("\uFDD0'line",46)),true),cljs.core.hash_map("\uFDD0'line",46))))].join('')));
 }
 if(cljs.core._EQ_.call(null,jsrefact.core.ast_QMARK_.call(null,jsrefact.tests.asttest.parsedTest),true))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast?","\uFDD1'parsedTest"),cljs.core.hash_map("\uFDD0'line",53)),true),cljs.core.hash_map("\uFDD0'line",53))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast?","\uFDD1'parsedTest"),cljs.core.hash_map("\uFDD0'line",47)),true),cljs.core.hash_map("\uFDD0'line",47))))].join('')));
 }
-if(cljs.core._EQ_.call(null,jsrefact.core.ast_QMARK_.call(null,cljs.core.deref.call(null,jsrefact.core.progrm))))
+if(cljs.core._EQ_.call(null,jsrefact.core.ast_QMARK_.call(null,cljs.core.first.call(null,cljs.core.deref.call(null,jsrefact.core.progrm))),true))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast?",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",55))),cljs.core.hash_map("\uFDD0'line",55))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast?",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",49))),cljs.core.hash_map("\uFDD0'line",49)),true),cljs.core.hash_map("\uFDD0'line",49))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -127,7 +123,7 @@ if(false)
 }
 })())).type,"VariableDeclaration"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",57))),cljs.core.hash_map("\uFDD0'line",57))),cljs.core.hash_map("\uFDD0'line",57))),cljs.core.hash_map("\uFDD0'line",57)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",57))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",51))),cljs.core.hash_map("\uFDD0'line",51))),cljs.core.hash_map("\uFDD0'line",51))),cljs.core.hash_map("\uFDD0'line",51)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",51))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -144,9 +140,9 @@ if(false)
 } else
 {return xs__2905__auto__;
 }
-})())),cljs.core.deref.call(null,jsrefact.core.progrm)))
+})())),cljs.core.first.call(null,cljs.core.deref.call(null,jsrefact.core.progrm))))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",60))),cljs.core.hash_map("\uFDD0'line",60))),cljs.core.hash_map("\uFDD0'line",60)),cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",60))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",54))),cljs.core.hash_map("\uFDD0'line",54))),cljs.core.hash_map("\uFDD0'line",54)),cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.list("\uFDD1'clojure.core/deref","\uFDD1'progrm")),cljs.core.hash_map("\uFDD0'line",54))),cljs.core.hash_map("\uFDD0'line",54))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -171,7 +167,7 @@ if(false)
 }
 })())),"declarations"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?prop"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?node","\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",65)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?prop","\uFDD1'?node","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",66))),cljs.core.hash_map("\uFDD0'line",64))),cljs.core.hash_map("\uFDD0'line",63))),cljs.core.hash_map("\uFDD0'line",63)),"declarations"),cljs.core.hash_map("\uFDD0'line",63))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?prop"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?node","\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",59)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?prop","\uFDD1'?node","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",60))),cljs.core.hash_map("\uFDD0'line",58))),cljs.core.hash_map("\uFDD0'line",57))),cljs.core.hash_map("\uFDD0'line",57)),"declarations"),cljs.core.hash_map("\uFDD0'line",57))))].join('')));
 }
 if(cljs.core._EQ_.call(null,jsrefact.core.ast_kind.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -196,7 +192,7 @@ if(false)
 }
 })()))),"VariableDeclarator"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?no"),cljs.core.hash_map("\uFDD0'line",71)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",72))),cljs.core.hash_map("\uFDD0'line",70))),cljs.core.hash_map("\uFDD0'line",69))),cljs.core.hash_map("\uFDD0'line",69))),cljs.core.hash_map("\uFDD0'line",69)),"VariableDeclarator"),cljs.core.hash_map("\uFDD0'line",69))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?no"),cljs.core.hash_map("\uFDD0'line",65)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",66))),cljs.core.hash_map("\uFDD0'line",64))),cljs.core.hash_map("\uFDD0'line",63))),cljs.core.hash_map("\uFDD0'line",63))),cljs.core.hash_map("\uFDD0'line",63)),"VariableDeclarator"),cljs.core.hash_map("\uFDD0'line",63))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -229,7 +225,7 @@ if(false)
 }
 })())),"id"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",77)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",78))),cljs.core.hash_map("\uFDD0'line",76))),cljs.core.hash_map("\uFDD0'line",75))),cljs.core.hash_map("\uFDD0'line",75)),"id"),cljs.core.hash_map("\uFDD0'line",75))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",71)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",72))),cljs.core.hash_map("\uFDD0'line",70))),cljs.core.hash_map("\uFDD0'line",69))),cljs.core.hash_map("\uFDD0'line",69)),"id"),cljs.core.hash_map("\uFDD0'line",69))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -262,7 +258,7 @@ if(false)
 }
 })()),cljs.core.List.EMPTY))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",82)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",83))),cljs.core.hash_map("\uFDD0'line",81))),cljs.core.hash_map("\uFDD0'line",80)),cljs.core.List.EMPTY),cljs.core.hash_map("\uFDD0'line",80))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",76)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",77))),cljs.core.hash_map("\uFDD0'line",75))),cljs.core.hash_map("\uFDD0'line",74)),cljs.core.List.EMPTY),cljs.core.hash_map("\uFDD0'line",74))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -295,7 +291,7 @@ if(false)
 }
 })()),cljs.core.List.EMPTY))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",87)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",88))),cljs.core.hash_map("\uFDD0'line",86))),cljs.core.hash_map("\uFDD0'line",85)),cljs.core.List.EMPTY),cljs.core.hash_map("\uFDD0'line",85))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",81)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",82))),cljs.core.hash_map("\uFDD0'line",80))),cljs.core.hash_map("\uFDD0'line",79)),cljs.core.List.EMPTY),cljs.core.hash_map("\uFDD0'line",79))))].join('')));
 }
 if(cljs.core._EQ_.call(null,jsrefact.core.ast_kind.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -328,7 +324,7 @@ if(false)
 }
 })()))),"Identifier"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",92)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",93))),cljs.core.hash_map("\uFDD0'line",91))),cljs.core.hash_map("\uFDD0'line",90))),cljs.core.hash_map("\uFDD0'line",90))),cljs.core.hash_map("\uFDD0'line",90)),"Identifier"),cljs.core.hash_map("\uFDD0'line",90))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'ast-kind",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?va"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?no","\uFDD1'?pr"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",86)),cljs.core.with_meta(cljs.core.list("\uFDD1'child","\uFDD1'?pr","\uFDD1'?no","\uFDD1'?va"),cljs.core.hash_map("\uFDD0'line",87))),cljs.core.hash_map("\uFDD0'line",85))),cljs.core.hash_map("\uFDD0'line",84))),cljs.core.hash_map("\uFDD0'line",84))),cljs.core.hash_map("\uFDD0'line",84)),"Identifier"),cljs.core.hash_map("\uFDD0'line",84))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.count.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -353,7 +349,7 @@ if(false)
 }
 })())),3))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",102)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",103))),cljs.core.hash_map("\uFDD0'line",101))),cljs.core.hash_map("\uFDD0'line",100))),cljs.core.hash_map("\uFDD0'line",100)),3),cljs.core.hash_map("\uFDD0'line",99))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",96)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",97))),cljs.core.hash_map("\uFDD0'line",95))),cljs.core.hash_map("\uFDD0'line",94))),cljs.core.hash_map("\uFDD0'line",94)),3),cljs.core.hash_map("\uFDD0'line",93))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -378,7 +374,7 @@ if(false)
 }
 })())),"type"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",109)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",110))),cljs.core.hash_map("\uFDD0'line",108))),cljs.core.hash_map("\uFDD0'line",107))),cljs.core.hash_map("\uFDD0'line",107)),"type"),cljs.core.hash_map("\uFDD0'line",106))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",103)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",104))),cljs.core.hash_map("\uFDD0'line",102))),cljs.core.hash_map("\uFDD0'line",101))),cljs.core.hash_map("\uFDD0'line",101)),"type"),cljs.core.hash_map("\uFDD0'line",100))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -403,7 +399,7 @@ if(false)
 }
 })())),"VariableDeclaration"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",116)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",117))),cljs.core.hash_map("\uFDD0'line",115))),cljs.core.hash_map("\uFDD0'line",114))),cljs.core.hash_map("\uFDD0'line",114)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",113))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",110)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",111))),cljs.core.hash_map("\uFDD0'line",109))),cljs.core.hash_map("\uFDD0'line",108))),cljs.core.hash_map("\uFDD0'line",108)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",107))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.instance_QMARK_.call(null,Array,cljs.core.second.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -428,7 +424,7 @@ if(false)
 }
 })()))),true))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'instance?","\uFDD1'js/Array",cljs.core.with_meta(cljs.core.list("\uFDD1'second",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",123)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",124))),cljs.core.hash_map("\uFDD0'line",122))),cljs.core.hash_map("\uFDD0'line",121))),cljs.core.hash_map("\uFDD0'line",121))),cljs.core.hash_map("\uFDD0'line",121)),true),cljs.core.hash_map("\uFDD0'line",120))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'instance?","\uFDD1'js/Array",cljs.core.with_meta(cljs.core.list("\uFDD1'second",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?value"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p","\uFDD1'?props"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",117)),cljs.core.with_meta(cljs.core.list("\uFDD1'has","\uFDD1'?props","\uFDD1'?p","\uFDD1'?value"),cljs.core.hash_map("\uFDD0'line",118))),cljs.core.hash_map("\uFDD0'line",116))),cljs.core.hash_map("\uFDD0'line",115))),cljs.core.hash_map("\uFDD0'line",115))),cljs.core.hash_map("\uFDD0'line",115)),true),cljs.core.hash_map("\uFDD0'line",114))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.count.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -452,7 +448,7 @@ if(false)
 }
 })())),3))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",130)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",131))),cljs.core.hash_map("\uFDD0'line",129))),cljs.core.hash_map("\uFDD0'line",128))),cljs.core.hash_map("\uFDD0'line",128)),3),cljs.core.hash_map("\uFDD0'line",128))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",124)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",125))),cljs.core.hash_map("\uFDD0'line",123))),cljs.core.hash_map("\uFDD0'line",122))),cljs.core.hash_map("\uFDD0'line",122)),3),cljs.core.hash_map("\uFDD0'line",122))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.last.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -476,7 +472,7 @@ if(false)
 }
 })())).type,"Literal"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'last",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",136)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",137))),cljs.core.hash_map("\uFDD0'line",135))),cljs.core.hash_map("\uFDD0'line",134))),cljs.core.hash_map("\uFDD0'line",134))),cljs.core.hash_map("\uFDD0'line",134)),"Literal"),cljs.core.hash_map("\uFDD0'line",134))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'last",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",130)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",131))),cljs.core.hash_map("\uFDD0'line",129))),cljs.core.hash_map("\uFDD0'line",128))),cljs.core.hash_map("\uFDD0'line",128))),cljs.core.hash_map("\uFDD0'line",128)),"Literal"),cljs.core.hash_map("\uFDD0'line",128))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.second.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -500,7 +496,7 @@ if(false)
 }
 })())).type,"Identifier"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'second",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",142)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",143))),cljs.core.hash_map("\uFDD0'line",141))),cljs.core.hash_map("\uFDD0'line",140))),cljs.core.hash_map("\uFDD0'line",140))),cljs.core.hash_map("\uFDD0'line",140)),"Identifier"),cljs.core.hash_map("\uFDD0'line",140))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'second",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",136)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",137))),cljs.core.hash_map("\uFDD0'line",135))),cljs.core.hash_map("\uFDD0'line",134))),cljs.core.hash_map("\uFDD0'line",134))),cljs.core.hash_map("\uFDD0'line",134)),"Identifier"),cljs.core.hash_map("\uFDD0'line",134))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -524,7 +520,7 @@ if(false)
 }
 })())).type,"VariableDeclarator"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",148)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",149))),cljs.core.hash_map("\uFDD0'line",147))),cljs.core.hash_map("\uFDD0'line",146))),cljs.core.hash_map("\uFDD0'line",146))),cljs.core.hash_map("\uFDD0'line",146)),"VariableDeclarator"),cljs.core.hash_map("\uFDD0'line",146))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?chld"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?p"]),cljs.core.with_meta(cljs.core.list("\uFDD1'program","\uFDD1'?p"),cljs.core.hash_map("\uFDD0'line",142)),cljs.core.with_meta(cljs.core.list("\uFDD1'child+","\uFDD1'?p","\uFDD1'?chld"),cljs.core.hash_map("\uFDD0'line",143))),cljs.core.hash_map("\uFDD0'line",141))),cljs.core.hash_map("\uFDD0'line",140))),cljs.core.hash_map("\uFDD0'line",140))),cljs.core.hash_map("\uFDD0'line",140)),"VariableDeclarator"),cljs.core.hash_map("\uFDD0'line",140))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.count.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -548,7 +544,7 @@ if(false)
 }
 })())),4))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","\uFDD1'?kind","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",155))),cljs.core.hash_map("\uFDD0'line",154))),cljs.core.hash_map("\uFDD0'line",153))),cljs.core.hash_map("\uFDD0'line",153)),4),cljs.core.hash_map("\uFDD0'line",153))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","\uFDD1'?kind","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",149))),cljs.core.hash_map("\uFDD0'line",148))),cljs.core.hash_map("\uFDD0'line",147))),cljs.core.hash_map("\uFDD0'line",147)),4),cljs.core.hash_map("\uFDD0'line",147))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -567,7 +563,7 @@ if(false)
 }
 })())).type,"Identifier"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","Identifier","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",159))),cljs.core.hash_map("\uFDD0'line",158))),cljs.core.hash_map("\uFDD0'line",158))),cljs.core.hash_map("\uFDD0'line",158)),"Identifier"),cljs.core.hash_map("\uFDD0'line",158))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'.-type",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","Identifier","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",153))),cljs.core.hash_map("\uFDD0'line",152))),cljs.core.hash_map("\uFDD0'line",152))),cljs.core.hash_map("\uFDD0'line",152)),"Identifier"),cljs.core.hash_map("\uFDD0'line",152))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.count.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -586,7 +582,7 @@ if(false)
 }
 })())),1))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","Identifier","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",163))),cljs.core.hash_map("\uFDD0'line",162))),cljs.core.hash_map("\uFDD0'line",162)),1),cljs.core.hash_map("\uFDD0'line",162))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","Identifier","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",157))),cljs.core.hash_map("\uFDD0'line",156))),cljs.core.hash_map("\uFDD0'line",156)),1),cljs.core.hash_map("\uFDD0'line",156))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -610,7 +606,7 @@ if(false)
 }
 })())),"VariableDeclaration"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","\uFDD1'?kind","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",168))),cljs.core.hash_map("\uFDD0'line",167))),cljs.core.hash_map("\uFDD0'line",166))),cljs.core.hash_map("\uFDD0'line",166)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",166))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?node"]),cljs.core.with_meta(cljs.core.list("\uFDD1'ast","\uFDD1'?kind","\uFDD1'?node"),cljs.core.hash_map("\uFDD0'line",162))),cljs.core.hash_map("\uFDD0'line",161))),cljs.core.hash_map("\uFDD0'line",160))),cljs.core.hash_map("\uFDD0'line",160)),"VariableDeclaration"),cljs.core.hash_map("\uFDD0'line",160))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.count.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -643,7 +639,7 @@ if(false)
 }
 })())),3))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",175)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",176))),cljs.core.hash_map("\uFDD0'line",174))),cljs.core.hash_map("\uFDD0'line",173))),cljs.core.hash_map("\uFDD0'line",173)),3),cljs.core.hash_map("\uFDD0'line",173))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",169)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",170))),cljs.core.hash_map("\uFDD0'line",168))),cljs.core.hash_map("\uFDD0'line",167))),cljs.core.hash_map("\uFDD0'line",167)),3),cljs.core.hash_map("\uFDD0'line",167))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -676,7 +672,7 @@ if(false)
 }
 })())),"VariableDeclarator"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",181)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",182))),cljs.core.hash_map("\uFDD0'line",180))),cljs.core.hash_map("\uFDD0'line",179))),cljs.core.hash_map("\uFDD0'line",179)),"VariableDeclarator"),cljs.core.hash_map("\uFDD0'line",179))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'one"),cljs.core.hash_map("\uFDD0'line",175)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",176))),cljs.core.hash_map("\uFDD0'line",174))),cljs.core.hash_map("\uFDD0'line",173))),cljs.core.hash_map("\uFDD0'line",173)),"VariableDeclarator"),cljs.core.hash_map("\uFDD0'line",173))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.first.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -709,7 +705,7 @@ if(false)
 }
 })())),"Literal"))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",187)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",188))),cljs.core.hash_map("\uFDD0'line",186))),cljs.core.hash_map("\uFDD0'line",185))),cljs.core.hash_map("\uFDD0'line",185)),"Literal"),cljs.core.hash_map("\uFDD0'line",185))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'first",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",181)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",182))),cljs.core.hash_map("\uFDD0'line",180))),cljs.core.hash_map("\uFDD0'line",179))),cljs.core.hash_map("\uFDD0'line",179)),"Literal"),cljs.core.hash_map("\uFDD0'line",179))))].join('')));
 }
 if(cljs.core._EQ_.call(null,cljs.core.count.call(null,cljs.core.doall.call(null,(function (){var xs__2905__auto__ = cljs.core.logic._take_STAR_.call(null,(new cljs.core.logic.Inc((function (){
 return (function (a__2897__auto__){
@@ -742,7 +738,7 @@ if(false)
 }
 })())),1))
 {} else
-{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",193)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",194))),cljs.core.hash_map("\uFDD0'line",192))),cljs.core.hash_map("\uFDD0'line",191))),cljs.core.hash_map("\uFDD0'line",191)),1),cljs.core.hash_map("\uFDD0'line",191))))].join('')));
+{throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str(cljs.core.pr_str.call(null,cljs.core.with_meta(cljs.core.list("\uFDD1'=",cljs.core.with_meta(cljs.core.list("\uFDD1'count",cljs.core.with_meta(cljs.core.list("\uFDD1'l/run*",cljs.core.vec(["\uFDD1'?kind"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/fresh",cljs.core.vec(["\uFDD1'?nodeOut","\uFDD1'?no"]),cljs.core.with_meta(cljs.core.list("\uFDD1'l/==","\uFDD1'?no","\uFDD1'sec"),cljs.core.hash_map("\uFDD0'line",187)),cljs.core.with_meta(cljs.core.list("\uFDD1'ast-with-input","\uFDD1'?kind","\uFDD1'?no","\uFDD1'?nodeOut"),cljs.core.hash_map("\uFDD0'line",188))),cljs.core.hash_map("\uFDD0'line",186))),cljs.core.hash_map("\uFDD0'line",185))),cljs.core.hash_map("\uFDD0'line",185)),1),cljs.core.hash_map("\uFDD0'line",185))))].join('')));
 }
 return cljs.core.println.call(null,"AST Unit tests finished.");
 });
