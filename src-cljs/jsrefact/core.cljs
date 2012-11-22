@@ -35,10 +35,9 @@
 ; Parsing Javascript using the Esprima parser
 ; http://esprima.org/
 (def esprimaParser js/esprima)
-;(js-print (.-version y ))
 ;(def parsed (.parse esprimaParser " var x = 42"))
-
-(def parsed (.parse esprimaParser "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;"))
+;(def parsed (.parse esprimaParser "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;"))
+(def parsed (.parse esprimaParser "var i = 0; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec();" (js* "{ loc: true }")))
 (def progrm (atom (.-body parsed)))
 
 ;; Debug prints
@@ -151,13 +150,13 @@
   (l/fresh [?foundvals]
     (has ?prop ?node ?foundvals)
     (l/project [?foundvals]
-      (l/log ?foundvals)
+      ;(l/log ?foundvals)
       (l/conde
         [(l/== true (ast? ?foundvals))
-         (l/log "1" ?foundvals)
+         ;(l/log "1" ?foundvals)
          (l/== ?val ?foundvals)]
         [(l/== true (instance? js/Array ?foundvals))
-         (l/log "2" ?foundvals)
+         ;(l/log "2" ?foundvals)
          (fresh [?s]
           (l/== ?s (seq ?foundvals))
           (membero ?val ?s))])
@@ -173,3 +172,33 @@
     (l/conde
       [(l/== ?child ?ch)]
       [(child+ ?ch ?child)])))
+
+
+(defn
+  FunctionDeclarations
+  ""
+  [?functs]
+  (ast "FunctionDeclaration" ?functs))
+
+(defn
+  FunctionCalls
+  "?func is an AST which represents a function declaration
+   ?calls is an AST which represents the callees of above function declaration"
+  [?func ?calls]
+  (fresh [?funcName ?allCalls ?expressions ?callees ?allCallNames]
+      (l/== ?funcName (.-name (.-id ?func)))
+      (ast "ExpressionStatement" ?allCalls)
+      (l/project [?allCalls]
+        (has "expression" ?allCalls ?expressions)
+        (has "callee" ?expressions ?callees)
+        (l/project [?callees]
+          (l/== ?allCallNames (.-name ?callees))
+          (l/conde
+            [(l/== ?allCallNames ?funcName)
+             (l/== ?calls ?allCalls)])
+        ))))
+
+(def one (first (l/run* [?n] (FunctionDeclarations ?n))))
+
+(l/run* [?calls]
+  (FunctionCalls one ?calls))
