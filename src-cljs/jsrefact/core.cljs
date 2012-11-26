@@ -9,7 +9,8 @@
                    [clojure.tools.macro :as mu])
   	(:use
 		   [cljs.core.logic
-    		:only [membero]])
+    		:only [membero]][clojure.walk 
+           :only [walk]])
 	(:require [esp :as es]
             [clojure.browser.repl :as repl]))
 
@@ -37,7 +38,7 @@
 (def esprimaParser js/esprima)
 ;(def parsed (.parse esprimaParser " var x = 42"))
 ;(def parsed (.parse esprimaParser "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;"))
-(def parsed (.parse esprimaParser "var i = 0; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec();" (js* "{ loc: true }")))
+(def parsed (.parse esprimaParser "var i = 0; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Dec();" (js* "{ loc: true }")))
 (def progrm (atom (.-body parsed)))
 
 ;; Debug prints
@@ -110,7 +111,7 @@
   ast-with-input
   "Reification of the relation between an ast node ?node
     and its kind ?kind
-    Uses ?nodeIn as input ast"
+    Uses ?nodeIn as input AST"
   [?kind ?nodeIn ?nodeOut]
   (l/fresh [?root]
     (l/== ?root ?nodeIn)
@@ -144,23 +145,20 @@
 (defn 
   child
   "Reification of the relation between an ast ?node
-    and its astnode ?value that has a property 
-    named ?property"
+  and its astnode ?value that has a property 
+  named ?property"
   [?prop ?node ?val]
   (l/fresh [?foundvals]
-    (has ?prop ?node ?foundvals)
-    (l/project [?foundvals]
-      ;(l/log ?foundvals)
-      (l/conde
-        [(l/== true (ast? ?foundvals))
-         ;(l/log "1" ?foundvals)
-         (l/== ?val ?foundvals)]
-        [(l/== true (instance? js/Array ?foundvals))
-         ;(l/log "2" ?foundvals)
-         (fresh [?s]
-          (l/== ?s (seq ?foundvals))
-          (membero ?val ?s))])
-  )))
+           (has ?prop ?node ?foundvals)
+           (l/project [?foundvals]
+                      (l/conde
+                        [(l/== true (ast? ?foundvals))
+                         (l/== ?val ?foundvals)]
+                        [(l/== true (instance? js/Array ?foundvals))
+                         (fresh [?s]
+                                (l/== ?s (seq ?foundvals))
+                                (membero ?val ?s))])
+                      )))
 
 
 (defn
@@ -168,37 +166,120 @@
   "?child is contained within ?node at a certain depth"
   [?node ?child]
   (l/fresh [?prop ?ch]
-    (child ?prop ?node ?ch)
-    (l/conde
-      [(l/== ?child ?ch)]
-      [(child+ ?ch ?child)])))
+           (child ?prop ?node ?ch)
+           (l/conde
+             [(l/== ?child ?ch)]
+             [(child+ ?ch ?child)])))
 
 
 (defn
-  FunctionDeclarations
+  thisexpressions
+  ""
+  [?this]
+  (ast "ThisExpression" ?this))
+
+(defn
+  functiondeclarations
   ""
   [?functs]
   (ast "FunctionDeclaration" ?functs))
 
 (defn
-  FunctionCalls
-  "?func is an AST which represents a function declaration
-   ?calls is an AST which represents the callees of above function declaration"
+  expressionstatement
+  ""
+  [?exp]
+  (ast "ExpressionStatement" ?exp))
+
+(defn
+  name-l
+  ""
+  [?a ?name]
+  (l/project [?a]
+             (l/== ?name (.-name ?a))))
+
+(defn
+  func-name
+  "?func is a FunctionDeclaration object"
+  [?func ?funcname]
+  (name-l (.-id ?func) ?funcname))
+
+(defn
+  functioncalls
+  "?func is an AST containing a function declaration
+  ?calls is an AST which contains a callee of above function declaration"
   [?func ?calls]
   (fresh [?funcName ?allCalls ?expressions ?callees ?allCallNames]
-      (l/== ?funcName (.-name (.-id ?func)))
-      (ast "ExpressionStatement" ?allCalls)
-      (l/project [?allCalls]
-        (has "expression" ?allCalls ?expressions)
-        (has "callee" ?expressions ?callees)
-        (l/project [?callees]
-          (l/== ?allCallNames (.-name ?callees))
-          (l/conde
-            [(l/== ?allCallNames ?funcName)
-             (l/== ?calls ?allCalls)])
-        ))))
+         (func-name ?func ?funcName)
+         (expressionstatement ?allCalls)
+         (has "expression" ?allCalls ?expressions)
+         (has "callee" ?expressions ?callees)
+         (name-l ?callees ?allCallNames)
+         (l/== ?allCallNames ?funcName)
+         (l/== ?calls ?allCalls)))
 
-(def one (first (l/run* [?n] (FunctionDeclarations ?n))))
+(def one (first (l/run* [?n] (functiondeclarations ?n))))
+(l/run* [?calls] (functioncalls one ?calls))
 
-(l/run* [?calls]
-  (FunctionCalls one ?calls))
+(defn
+  location
+  "Unify ?loc with the location object from ?ast"
+  [?ast ?loc]
+  (l/project [?ast]
+  (l/== ?loc (.-loc ?ast))))
+
+(defn
+  ast-location
+  "Location object parameters from ?ast AST to collection
+  Collection elements:
+    - Start line
+    - End line
+    - Start column
+    - End column "
+  [?ast ?locationParams]
+  (l/fresh [?locObject]
+         (location ?ast ?locObject)
+         (l/log ?ast)
+         (l/project [?locObject]
+                    (l/== ?locationParams (let [startLine (.-line (.-start ?locObject))
+                                                endLine (.-line (.-end ?locObject))
+                                                startCol (.-column (.-start ?locObject))
+                                                endCol (.-column (.-end ?locObject))]
+                                            [startLine endLine startCol endCol]
+                                            )))
+         )
+  )
+
+(defn
+  lines
+  "Reifies ?lines with the amount of lines of this ast object"
+  [?ast ?lines]
+  (l/fresh [?loc]
+           (location ?ast ?loc)
+           (l/project [?loc]
+                      (l/== ?lines
+                            (let [startLine (.-line (.-start ?loc))
+                                  endLine (.-line (.-end ?loc))]
+                              (- endLine startLine -1))))))
+
+(defn
+  function-lines
+  "Reifies ?lines with the length of all functions"
+  [?lines]
+  (fresh [?n]
+         (functiondeclarations ?n)
+         (lines ?n ?lines)))
+
+(defn
+  average-function-lines
+  "Calculate average of all function lines"
+  []
+  (let [lines (l/run* [?vals] (function-lines ?vals))]
+    (/ (walk #(* 1 %) 
+             #(apply + %) 
+             lines)
+       (count lines))))
+
+;(def sec (second (l/run* [?p] (program ?p))))
+;(l/run* [?vals] (ast-location sec ?vals))
+;(l/run* [?vals] (function-lines ?vals))
+;(average-function-lines)
