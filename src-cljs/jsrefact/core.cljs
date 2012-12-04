@@ -38,7 +38,8 @@
 (def esprimaParser js/esprima)
 ;(def parsed (.parse esprimaParser " var x = 42"))
 ;(def parsed (.parse esprimaParser "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;"))
-(def parsed (.parse esprimaParser "var i = 0; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Dec();" (js* "{ loc: true }")))
+;(def parsed (.parse esprimaParser "var i = 0; var x = null; var patt='true'; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Dec();" (js* "{ loc: true }")))
+(def parsed (.parse esprimaParser "var k = true; var l = 0; var m = 'test'; var n = [1,2];" (js* "{ loc: true }")))
 (def progrm (atom (.-body parsed)))
 
 ;; Debug prints
@@ -174,39 +175,40 @@
 
 (defn
   thisexpressions
-  ""
+  "Reify ?exp with all the 'ThisExpression's from the ast"
   [?this]
   (ast "ThisExpression" ?this))
 
 (defn
   functiondeclarations
-  ""
+  "Reify ?exp with all the 'FunctionDeclaration's from the ast"
   [?functs]
   (ast "FunctionDeclaration" ?functs))
 
 (defn
   expressionstatement
-  ""
+  "Reify ?exp with all the 'ExpressionStatement's from the ast"
   [?exp]
   (ast "ExpressionStatement" ?exp))
 
 (defn
   name-l
-  ""
-  [?a ?name]
-  (l/project [?a]
-             (l/== ?name (.-name ?a))))
+  "Reification between ?name and the name property of ?ast"
+  [?ast ?name]
+  (l/project [?ast]
+             (l/== ?name (.-name ?ast))))
 
 (defn
   func-name
-  "?func is a FunctionDeclaration object"
+  "Reify ?funcname with the name property of functiondeclaration ?func
+    ?func is a FunctionDeclaration object"
   [?func ?funcname]
   (name-l (.-id ?func) ?funcname))
 
 (defn
   functioncalls
   "?func is an AST containing a function declaration
-  ?calls is an AST which contains a callee of above function declaration"
+    ?calls is an AST which contains a callee of above function declaration"
   [?func ?calls]
   (fresh [?funcName ?allCalls ?expressions ?callees ?allCallNames]
          (func-name ?func ?funcName)
@@ -217,12 +219,12 @@
          (l/== ?allCallNames ?funcName)
          (l/== ?calls ?allCalls)))
 
-(def one (first (l/run* [?n] (functiondeclarations ?n))))
-(l/run* [?calls] (functioncalls one ?calls))
+;(def one (first (l/run* [?n] (functiondeclarations ?n))))
+;(l/run* [?calls] (functioncalls one ?calls))
 
 (defn
   location
-  "Unify ?loc with the location object from ?ast"
+  "Reify ?loc with the location object from ?ast"
   [?ast ?loc]
   (l/project [?ast]
   (l/== ?loc (.-loc ?ast))))
@@ -283,3 +285,92 @@
 ;(l/run* [?vals] (ast-location sec ?vals))
 ;(l/run* [?vals] (function-lines ?vals))
 ;(average-function-lines)
+
+
+;(def z {})
+;(def z (conj z ["test" 2]))
+
+(defn
+  inc-in-hash-map
+  "Increase the value from a-key with one inside a-hash map
+   If it doenst exist, create it with value 1"
+  [a-hash a-key]
+  (let [entry (a-hash a-key)]
+    (if nil? entry)
+      (conj a-hash [a-key 1])
+      (conj a-hash [a-key (+ entry 1)])))
+
+;(inc-in-hash-map z "test")
+;z
+
+; array = ArrayExpression
+; string = Literal & value = string
+; boolean = Literal & value = boolean
+; number = Literal & value = number
+; RegExp = Literal & value = RegExp
+
+(defn
+  array-expression
+  "Reify ?arr with all arrayexpressions from input ?ast"
+  [?ast ?arr]
+  (ast-with-input "ArrayExpression" ?ast ?arr))
+
+(defn
+  literal
+  "Reify ?lit with all literals from input ?ast"
+  [?ast ?lit]
+  (ast-with-input "Literal" ?ast ?lit))
+
+(defn
+  value
+  "Reification of ?value with poperty 'value' of input ?ast"
+  [?ast ?value]
+  (l/project [?ast]
+             (l/== ?value (.-value ?ast))))
+
+(defn
+  boolean?
+  "Boolean type check"
+  [val]
+  (if (or (= val true) (= val false))
+    true
+    false))
+
+; Result of all-object-kinds will appear in this hash map
+(def all-object-kinds-result {})
+
+(defn 
+  register-object-kind
+  "Register object kind in all-object-kinds-result hash map"
+  [kind]
+  (def all-object-kinds-result
+    (inc-in-hash-map all-object-kinds-result kind)))
+
+
+(defn
+  literal-kinds
+  "Check and registers all literal object kinds possible"
+  [?lit]
+  (l/fresh [?val]
+           (value ?lit ?val)
+           (l/project [?val]
+                      (l/log ?val)
+                      (l/conda [(l/== true (number? ?val)) (l/log "number") (l/== nil (register-object-kind "number"))]
+                               [(l/== true (nil? ?val)) (l/log "nil") (l/== nil (register-object-kind "nil"))]
+                               [(l/== true (string? ?val)) (l/log "string") (l/== nil (register-object-kind "string"))]
+                               [(l/== true (boolean? ?val)) (l/log "bool") (l/== nil (register-object-kind "bool"))]))))
+
+(defn
+  all-object-kinds
+  "Count different object kinds. 
+   Result will be available in variable all-object-kinds-result"
+  []
+  (l/fresh [?p ?arr ?lit ?varDec] 
+           (program ?p)
+           (ast-with-input "VariableDeclarator" ?p ?varDec)
+           (l/conde [(array-expression ?varDec ?arr)(l/log "an array")(l/project [?arr] (def all-object-kinds-result (inc-in-hash-map all-object-kinds-result "array")))]
+                    [(literal ?varDec ?lit) (literal-kinds ?lit)]
+                    )))
+
+;(l/run* [?m] (all-object-kinds))
+;all-object-kinds-result
