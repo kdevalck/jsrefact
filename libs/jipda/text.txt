@@ -1,0 +1,181 @@
+Trampolined CPS abstract interpreter for JavaScript.
+
+- abstract counting (optimization for precision)
+- abstract garbage collection (optimization for precision)
+- per-context widening at call sites (optimization for speed)
+- pluggable lattice
+- values+cont stack modeled separately
+- full precision for return-flow
+- does not rely on any normalization (like alpha-renaming, ANF, CPS, ...)
+
+IDEAS:
+- use allocCounter in Aval iso. fresh
+- let mono be a possible piggy-back lattice
+- use internal (debug) function to fire off evaluations of exps in parallel
+- ipda.reads/writes: maybe also fix order and require equals iso. setEquals? (like is the case now in tests)
+
+
+===
+
+The abstract interpreter features two kinds of executable objects: Conts and Tasks.
+Conts represent host-level continuations that are solely used to implement the flow semantics of JavaScript.
+Tasks are host-level continuations that serve two purposes:
+- a Task serves as a unit of work for the trampoline: a running Task returns zero or more Tasks that are to be run afterwards
+- Tasks are also the mechanism used to introduce non-determinism while interpreting the user program
+
+===
+TODO
+
+- block semantics: no "tail-position", stack grows, need to flush last value and pass "undefined"
+
+- implement block as sequence with undefined wrapper cont
+
+- semantic overlap or not:
+yes: good for primitives, but space/precision trade-off (big array with a lot of banging on one index = worst case)
+no: not so good for primitives, but more uniform for abstract interpreter (addresses for indexes/keys), more variability possible.
+
+- if true "ok" else 9 will typecheck if String expected: the else will never be executed
+
+- calling functions with more/less args than params
+
+- jipdaRepl: currently does not deal well when multiple tasks are spawned: rethink/redesign Jipda and entrypoints
+
+===
+
+too many indexes in array alloc:
+
+- use other lattice: but then you have to match the property-lattice with the value-lattice
+- treat array benv differently from other benv (a la TAJS): then we need specific value-lattice (we would lose this as param)
+- structural solution: add extra manip functions, to control which indices are joined (what about the addresses?); this is withou intervening in the value-lattice
+
+WRONG: "solved" by putting responsibility on user lattice (recognize array indices)
+
+===
+
+Why multiple addresses in range of Benv?
+=> seems not to make sense: when adding and getting, we always join over the values for each address
+In other words: address of Benv + name uniquely determines address of property
+NO! when Benvs get updated, abstract names "merge" but addresses should stay unique for dependence purposes
+(otherwise new addresses would simply "emerge")
+Also, right now the merge happens on update, but imagine that we would join only when getting on the Benv:
+then we would still have separate addresses
+
+===
+
+DefaultValue or applyProc: why not gather all Callables, and cycle through them with Conts?
+Does this violate Harrison's dependency principle?
+
+===
+
+Idea: validate prototypical contract of "argument passed to sqrt must be positive" and "result of sqrt must be positive"
+
+===
+
+Idea: combine analyses (from DSL description?)
+
+===
+
+Idea: show dependency in type coercion scenario (toString, toValue)
+
+===
+
+Lattice.equals: CHECK THE FOLLOWING
+LatTajs: (_,_,_,NaN,_).equals((_,_,_,NaN,_): represented as the object NotANumber
+LatN: {NaN}.equals{NaN} === false: comparing elements themselves
+So, for termination we need NaN equals NaN, but for JS semantics 
+
+===
+
+The interpreter only remembers states required for its proper functioning
+(i.e. when encountering back-edges in control flow) + returns end states
+For keeping other intermediary states, this is up to the user.
+
+===
+
+subsumption check iso. equality check for stores in 'visited': 195->163 states for nssetup (navier-stokes setup)
+equality implemented with subsumption for benvs: 163->143 states for nssetup (?)
+
+===
+
+Software engineering tools for dynamic, higher-order languages are lacking.
+Rich integrated development environments for languages like Java have set the standard.
+Developers expect nothing less when they work in IDEs for languages like SmallTalk, Scheme or JavaScript.
+IDEs and other software enineering tools rely on static analysis to reason over program properties.
+However, constructing a static analysis to reason over non-trivial program properties is a daunting task.
+Moreover, one would need a multitude of static analyses, because, depending on the problem, we are interested in different program properties.
+Although a variety of program properties needs to be analyzed, we can still try to deduce a common ground.
+This way, we might prevent people from reinventing the wheel each time they need a static analysis for their tool.
+For starters, we can fix the program language semantics.
+For our research we chose JavaScript: it is a dynamical language with a functional core, and has imperative and object-oriented capabilities.
+We also observe that every program analysis at the very minimum requires some approximation of control flow and value flow.
+Therefore it would be natural to express our static analyses as an abstract interpretation: the interpreter would inherently need (and thus provide us with) control and value flow.
+Another trend is the renewed interest concurrent and parallel programming, due to some lunch not being free anymore.
+Therefore it would be of practical value if our interpreter also models a stack to some useful degree of precision, because this enables clients to compute interprocedural dependence.
+In summary: we fix the language semantics of our abstract interpreter (JavaScript), and we fix the minimum information it has to keep track of: control flow, value flow, and the stack.
+Suppose now that we declare that all other functionality is up to the client of the abstract interpreter.
+What we end up with is a generic abstract interpreter for JavaScript.
+
+A generic abstract interpreter is an abstract interpreter that fixes program language semantics but allows an abstract algebra (an abstract domain and its operations) to be plugged in as an independent module~\cite{cousotSas97}.
+In the case of JIPDA, the program semantics are those of ECMAScript 5.1~\cite{}, or more colloquially refered to as JavaScript.
+
+===
+
+\paragraph{Reference passing}
+JavaScript has no explicit pointers and operations on pointers.
+Still, objects in JavaScript (and therefore functions and arrays) are passed around as references.
+The details of reference creation and handling is strictly the responsibility of the interpreter.
+If the result of evaluating an expression is a reference to, say, an array, then this is of little use to a client that wishes to display the result in a meaningful way for example.
+The client will still be responsible for looking up the actual array object that is referenced, and implement the logic for iterating over the array and displaying each element, which again can be a reference.
+References are also a ``special'' kind of abstract value: the interpreter guarantees that there will only be a finite number of them at any given time, and joining references never loses precision (i.e. references are kept in sets with set union as the join operator).
+For these reasons it is a good thing to separate references from the rest of the abstract algebra.
+The client of the interpreter has to provide an abstract algebra that deals with all values except references.
+Internally, the abstract interpreter will construct a product lattice out of the user lattice and an internal lattice for references.
+
+===
+
+Top lattice: not a good idea: every name lookup returns every known address for example.
+When looking up these addresses, you end up joining Benvs with JipdaValues.
+Therefore: good design principle to only join as late as possibe (e.g. expecting Benvs, scan results, generate error config)
+
+===
+
+TODO: 'sameValue' method next to 'eq', 'equals', ... (NaN!)
+
+===
+
+Track reads of benv pointers? ('doScopeLookup')
+Yes: 'with'!
+
+===
+
+Argh: currently 'updateAval's that are needed because the interpreter uses immutable data structures (primarily
+update to objects after adding a prop, or updates involving envs) are not emitted as events.
+So you cannot rely on them to build a monovariant Store as a client. Is this a problem?
+Probably not: returnsResult returns a (program result) value and a store.
+Wrong: the resulting store does not capture all value-flow! (JsAnalysisTests.test1)
+
+===
+
+IDEA: map or filter function that uses this, should be passed a 'this' as second argument
+
+===
+
+Ideally, concreteTests should be able to run with "abstract" visitedStrategy (like, the default)
+and still never join stuff.
+
+===
+
+Currently all 'prototype' property addresses are created manually, through new ContextAddr(basea, "prototype"),
+i.e. not with an abstract name.
+=> make uniform? (always call 'ag.objectProperty')
+
+===
+
+ToBoolean happens on condition expression of 'if' for example: if the coercion would branch,
+do we need the checking/branching in 'if': yes, because values may get joined elsewhere ('true' and 'false' that is)
+But still, maybe branching in 'ToBoolean' is overkill?
+
+===
+
+
+

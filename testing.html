@@ -4,6 +4,7 @@
   </head>
   <body>
     <h1>JSRefact Unit tests</h1>
+    <div id="error" style="display: none">If no popup is shown, something went wrong. Check the browsers console screen.</div>
     <script type="text/javascript" src="unittests.js"></script>
     <script>
       goog.require('jsrefact.tests');
@@ -11,7 +12,24 @@
     <script>
       jsrefact.tests.run();
 </script>
+<script>
+var errorMessage = document.getElementById("error");
+var counter = 2;
+var newElement = document.createElement("p");
+newElement.innerHTML = "";
+var id;
+errorMessage.parentNode.replaceChild(newElement, errorMessage);
+id = setInterval(function() {
+    counter--;
+    if(counter < 0) {
+        errorMessage.style.display = 'inline';
+        newElement.parentNode.replaceChild(errorMessage, newElement);
+        clearInterval(id);
+    }
+}, 1000);
 
+
+</script>
     
   </body>
 </html>

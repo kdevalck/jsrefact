@@ -1,10 +1,15 @@
 (ns jsrefact.tests
-  (:require [jsrefact.tests.asttest :as ast]))
+  (:require [jsrefact.tests.predicatestest :as pred]
+  			[jsrefact.tests.refacttest :as refa]))
 
 (def success 0)
 
+
 (defn ^:export run []
-  (ast/run)
+  (println "Start all tests")
+  (pred/run)
+  ;(refa/run)
   ; ... list all tests here
-  (println "All test succeeded.")
+  (println "All tests succeeded.")
+  (js/alert "All tests succeeded.")
   success)

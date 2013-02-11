@@ -15,7 +15,27 @@
             :output-to "jsrefact.js"  
             :optimizations :whitespace 
             ;:optimizations :advanced 
-            :libs["esprima.js"]
+            :libs["libs/esprima.js"
+            "libs/escodegen.js" 
+            ; jipda javascript analysis import
+            "libs/jipda/common.js"
+            "libs/jipda/lattice/lattice.js"
+            "libs/jipda/lattice/topLattice.js"
+            "libs/jipda/lattice/setLattice.js"
+            "libs/jipda/lattice/cpLattice.js"
+            "libs/jipda/address/adress.js"
+            "libs/jipda/address/timeDefaultAg.js"
+            "libs/jipda/address/tagAg.js"
+            "libs/jipda/address/concreteAg.js"
+            "libs/jipda/state.js"
+            "libs/jipda/ast.js"
+            "libs/jipda/visited.js"
+            "libs/jipda/concretePrinter.js"
+            "libs/jipda/jipda.js"
+            "libs/jipda/dep.js"
+            "libs/jipda/transform.js"
+            "libs/jipda/instance/jsAnalysis.js"
+            ]
           }
         }
         :test
@@ -24,7 +44,27 @@
           :compiler {
             :optimizations :whitespace
             :output-to "unittests.js"
-            :libs["esprima.js"]
+            :libs["libs/esprima.js" 
+            "libs/escodegen.js"
+            ; jipda javascript analysis import
+            "libs/jipda/common.js"
+            "libs/jipda/lattice/lattice.js"
+            "libs/jipda/lattice/topLattice.js"
+            "libs/jipda/lattice/setLattice.js"
+            "libs/jipda/lattice/cpLattice.js"
+            "libs/jipda/address/adress.js"
+            "libs/jipda/address/timeDefaultAg.js"
+            "libs/jipda/address/tagAg.js"
+            "libs/jipda/address/concreteAg.js"
+            "libs/jipda/state.js"
+            "libs/jipda/ast.js"
+            "libs/jipda/visited.js"
+            "libs/jipda/concretePrinter.js"
+            "libs/jipda/jipda.js"
+            "libs/jipda/dep.js"
+            "libs/jipda/transform.js"
+            "libs/jipda/instance/jsAnalysis.js"
+            ]
           }
         }
       }
