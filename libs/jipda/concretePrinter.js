@@ -1,3 +1,5 @@
+goog.provide('concreteprinter');
+
   function ConcretePrinter(lattice, store)
   {
     this.lattice = lattice;

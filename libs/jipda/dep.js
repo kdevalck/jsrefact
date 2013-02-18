@@ -1,3 +1,5 @@
+goog.provide('depend');
+
 function Dependency(type, source, target)
 {
 	this.type = type;

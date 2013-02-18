@@ -10,13 +10,10 @@
   	(:use
      		   [cljs.core.logic :only [membero]]
      [clojure.walk :only [walk]]
-     [clojure.set :only [index]])
-  	(:require [esp :as es]
-             [esco :as esc]
-             [jipda :as ji]
-             [lattice :as lat]
-             [jipdaast :as as]))
-
+     [clojure.set :only [index]]
+     [esp :only [esprima parse]])
+    (:require [jipdaast :as as])
+  	)
 
 ; Debug print in the javascript console
 (defn 
@@ -37,33 +34,37 @@
 ; Parsing Javascript using the Esprima parser
 ; http://esprima.org/
 (def esprimaParser js/esprima)
-;(def parsed (.parse esprimaParser " var x = 42"))
-;(def parsed (.parse esprimaParser "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;"))
-;(def parsed (.parse esprimaParser "var i = 0; var x = null; var patt='true'; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Inc();" (js* "{ loc: true }")))
-(def parsed (.parse esprimaParser "function add1(n){return n+1}; var i = 0; function inc(f, p){return f(p)}; inc(add1,i);" (js* "{ loc: true }")))
-;(def parsed (.parse esprimaParser "var k = true; var l = 0; var m = 'test'; var n = [1,2];" (js* "{ loc: true }")))
-(def progrm (atom (.-body parsed)))
+(def code (atom ""))
+(def parsed (atom (js/createAst @code)))
+(def progrm (atom (.-body @parsed)))
+
+(defn
+  parseCode
+  [paramcode]
+  (swap! code (fn [progrmCode] paramcode))
+  (swap! parsed (fn [parsedCode] (js/createAst @code)))
+  (swap! progrm (fn [parsedprogramCode] (.-body @parsed))))
+
+(parseCode "var x = 43")
+;(parseCode "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;")
+;(parseCode "var i = 0; var x = null; var patt='true'; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Inc();" (js* "{ loc: true }"))
+;(parseCode "function add1(n){return n+1}; var i = 0; function inc(f, p){return f(p)}; inc(add1,i);" (js* "{ loc: true }"))
+;(parseCode "var k = true; var l = 0; var m = 'test'; var n = [1,2];" (js* "{ loc: true }"))
+
+
+
 
 ; Regenerating Javascript code from AST trees from the esprima parser
 ; https://github.com/Constellation/escodegen
-(def escodegenGenerator js/escodegen)
-(def generated (.generate escodegenGenerator
-                          parsed
-                          (js* "{format: {
-                                    compact: true
-                                    }
-                           }")))
+;(def escodegenGenerator js/escodegen)
+;(def versiontest (.-version escodegenGenerator))
+; (def generated (.generate escodegenGenerator
+;                           parsed
+;                           (js* "{format: {
+;                                     compact: true
+;                                     }
+;                            }")))
 
-;; Debug prints
-;(js-print parsed)
-;(js-print @progrm)
-
-;; JIPDA Analysis test
-;(def x (js/createAst "var a = 1; a;"))
-;(js-print x)
-;(def VarA (.-id (first (.-declarations (first (.-body x))))))
-;(def RefA (.-expression (second (.-body x))))
-;(js-print (js/scopeChain RefA x))
 
 (defn
   ast-property-value
@@ -85,7 +86,12 @@
   "Return a Seq of all properties of ast node using 
     javacscripts Object.keys(ast) function"
   [ast]
-  (seq (.keys js/Object ast)))
+  (def temp (seq (.keys js/Object ast)))
+  ; remove tag and toString properties from the list
+  ;  because they are not native properties from the
+  ;  ast. They are added by the JS parser used in JIPDA.
+  (def mintag (remove #{"tag"} temp))
+  (remove #{"toString"} mintag))
 
 (defn
   ast-kind
@@ -146,6 +152,19 @@
            (l/project [?node]
                       (membero ?prop (ast-properties ?node)))))
 
+(defn
+  ast-property-with-input
+  "Reification of the relation between an ast node ?node
+  and its property ?prop
+  Uses input as root node"
+  [?prop ?input ?node]
+  (l/fresh [?root]
+           (l/== ?root ?input)
+           (l/conde
+             [(l/== ?root ?node)]
+             [(child+ ?root ?node)])
+           (l/project [?node]
+                      (membero ?prop (ast-properties ?node)))))
 
 (defn
   ast-with-input
@@ -257,6 +276,33 @@
     (l/project [?n]
       (l/== ?name (ast-property-value ?n "name"))
       (l/== ?n ?ast))))
+
+(defn
+  ast-name-with-input
+  ""
+  [?ast ?input ?name]
+  (l/fresh [?p ?n]
+    (ast-property-with-input "name" ?input ?n)
+    (l/project [?n]
+      (l/== ?name (ast-property-value ?n "name"))
+      (l/== ?n ?ast))))
+
+(defn
+  ast-variabledeclarationwithname
+  ""
+  [?ast ?name]
+  (l/conda
+    [(l/lvaro ?name)
+     (l/fresh [?x] (ast-name-with-input ?x ?ast ?name))]
+    [(l/lvaro ?ast)
+     (l/fresh [?vardec ?id]
+              (ast "VariableDeclarator" ?vardec)
+              (l/project [?vardec]
+                         (l/== ?id (ast-property-value ?vardec "id"))
+                         (l/project [?id]
+                                    (l/conde 
+                                      [(l/== ?name (ast-property-value ?id "name"))
+                                       (l/== ?ast ?id)]))))]))
 
 (defn
   function-name

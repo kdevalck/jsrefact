@@ -1,3 +1,5 @@
+goog.provide('concreteag');
+
   var concreteAg = { counter: 0};
 
   concreteAg.object =

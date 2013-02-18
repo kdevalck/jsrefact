@@ -1,3 +1,5 @@
+goog.provide('transform');
+
 function createFromChildren(node, ncs)
 {
 	function copy(node, mixin)

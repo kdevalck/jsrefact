@@ -1,3 +1,5 @@
+goog.provide('tagag');
+
   var tagAg = {};
 
   tagAg.object =

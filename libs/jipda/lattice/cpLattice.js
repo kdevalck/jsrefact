@@ -1,3 +1,5 @@
+goog.provide('cplattice');
+
 function CpLattice()
 {
 	return (function ()

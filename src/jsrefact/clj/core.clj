@@ -1,4 +1,4 @@
-(ns jsrefact.core)
+(ns jsrefact.clj.core)
 
 (defn foo
   "I don't do a whole lot."

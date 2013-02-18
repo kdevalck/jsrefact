@@ -1,3 +1,5 @@
+goog.provide('toplattice');
+
 function TopLattice()
 {
 	return (function ()

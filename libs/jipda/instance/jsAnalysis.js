@@ -1,3 +1,5 @@
+goog.provide('jijsanalysis');
+
 // interface based on "Tool-supported Refactoring for JavaScript" by Asger Feldthaus et al. (OOPSLA'11)
 
 function JsAnalysis(ast)

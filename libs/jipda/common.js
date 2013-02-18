@@ -1,3 +1,5 @@
+goog.provide('common')
+
 // methods
 
 /*

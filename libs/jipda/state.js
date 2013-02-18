@@ -1,3 +1,5 @@
+goog.provide('jistate');
+
 function State()
 {
   this.returnsResult =

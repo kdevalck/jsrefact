@@ -1,3 +1,5 @@
+goog.provide('visited');
+
 function DefaultVisitedStrategy(gc)
 {
   this.gc = gc;

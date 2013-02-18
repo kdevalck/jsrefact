@@ -9,9 +9,9 @@
 ; Small tryouts for refactorings
 
 ;(def parsedTest (js/createAst "var x = 1;"))
-(def parsedTest (js/createAst "var x = 1; var y = 7;"))
-(def progrmTest (.-body parsedTest))
-(swap! progrm (fn [progrmT] progrmTest))
+;(def parsedTest (js/createAst "var x = 1; var y = 7;"))
+;(def progrmTest (.-body parsedTest))
+;(swap! progrm (fn [progrmT] progrmTest))
 
 ; (js-print parsedTest)
 ; (js-print (count (l/run* [?r] 
@@ -62,12 +62,12 @@
 ;(js-print parsedTest)
 ;(ast-tagged 24)
 ; debug run to see the tag numbers of ast's
-(l/run* [?r]
-		(l/fresh [?node]
-			(ast-property "tag" ?node)
-			(l/project [?node]
-				(l/== ?r (ast-tag ?node))
-				)))
+; (l/run* [?r]
+; 		(l/fresh [?node]
+; 			(ast-property "tag" ?node)
+; 			(l/project [?node]
+; 				(l/== ?r (ast-tag ?node))
+; 				)))
 
 
 

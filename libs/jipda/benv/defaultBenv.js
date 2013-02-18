@@ -1,3 +1,5 @@
+goog.provide('benv.defaultBenv');
+
 function DefaultBenv()
 {
   function Benv(Class)

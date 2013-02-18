@@ -1,3 +1,5 @@
+goog.provide('timedefa');
+
 var timeDefaultAg = {};
 
 timeDefaultAg.object =

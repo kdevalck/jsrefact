@@ -3,20 +3,18 @@
   	(:require-macros [cljs.core.logic.macros :as l])
   	(:use [jsrefact.predicates :only [js-print esprimaParser ast-kind ast-property-value ast-property-set-value
                                      		ast-properties ast? program child parsed has progrm child+ ast ast-with-input ast-literal
-                                     ast-value ast-name]]))
-
-
-
-
+                                     ast-value ast-name parseCode]]))
 
 (defn run []
   ; Parse a sample program
-  (def parsedTest (.parse esprimaParser "var x = 43"))
-  (def progrmTest (.-body parsedTest))
+  ;(def parsedTest (.parse esprimaParser "var x = 43"))
+  ;(def progrmTest (.-body parsedTest))
   ; Swap the progrm from jsrefact.core to the programTest
   ;  parsed inside jsrefact.tests.asttest to provide a 
   ;  ast object to the unittests.
-  (swap! progrm (fn [progrmT] progrmTest))
+  ;(swap! progrm (fn [progrmT] progrmTest))
+
+  (parseCode "var x = 43")
   
   (def one (first 
              (l/run* [?value]
@@ -34,25 +32,25 @@
   
   (println "  AST Unit tests started.")
   
-  (assert (= (ast-property-value parsedTest "type") "Program"))
+  (assert (= (ast-property-value @parsed "type") "Program"))
   
   (assert (= (ast-property-value (first @progrm) "type") "VariableDeclaration"))
   
   (assert (= (instance? js/Array (ast-property-value (first @progrm) "declarations")) true))
   
-  (assert (= (first (ast-properties parsedTest)) "type"))
+  (assert (= (first (ast-properties @parsed)) "type"))
   
   (assert (= (first (ast-properties (first @progrm))) "type"))
   
   (assert (= (count (ast-properties (first @progrm))) 3))
   
-  (assert (= (ast-kind parsedTest) "Program")) 
+  (assert (= (ast-kind @parsed) "Program")) 
   
   (assert (= (ast-kind (first @progrm)) "VariableDeclaration"))
   
   (let [fakeAst 5]
     	(assert (not= (ast? fakeAst) true))
-    	(assert (= (ast? parsedTest) true)))
+    	(assert (= (ast? @parsed) true)))
   
   (assert (= (ast? (first @progrm)) true))
   
@@ -104,7 +102,7 @@
                                     (program ?p)
                                     (has ?props ?p ?value))))
             3))
-  
+
   (assert (= 
             (first (l/run* [?props]
                            (l/fresh [?p ?value]

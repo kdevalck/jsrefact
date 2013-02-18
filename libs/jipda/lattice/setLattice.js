@@ -1,3 +1,5 @@
+goog.provide('setlattice');
+
 function LatN(n)
 {
 	return (function ()
