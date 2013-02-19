@@ -3,7 +3,7 @@
             This queries is mainly based on the paper: Tool-supported
             Refactogin for Javascript by Asger Feldthaus."}
   (:use [esp :only [esprima parse]]
-    [cljs.core.logic :only [membero lvaro nonlvaro conda]])
+    [cljs.core.logic :only [membero lvaro nonlvaro conda conso]])
   (:require-macros [cljs.core.logic.macros :as l])
   (:require 
             [common :as comm]
@@ -32,6 +32,7 @@
 
 (defn
   doAnalysis
+  "Do the javascript analysis using JIPDA and put in atom jsa"
   []
   (def tempAnalysis (new js/JsAnalysis @pred/parsed))
   (swap! jsa (fn [analysis] tempAnalysis)))
@@ -55,6 +56,7 @@
            (l/project [?node ?jsan]
                       (membero ?objects (seq (.objects ?jsan ?node))))))
 
+; wip
 (defn
   objectss
   "test"
@@ -71,16 +73,28 @@
                          (membero ?objects (seq (.objects ?jsan ?node))))]
              )))
 
-
 (defn
   scope
   "Reification of the relation between a functionExpression ?node
   and its scope ?scope"
+
+  ;TODO : only works with functionExpressions not yet with functiondeclarations
+
   [?node ?scope]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/project [?node ?jsan]
-                      (l/== ?scope (.scope ?jsan ?node)))))
+           (l/conda 
+             [(l/lvaro ?node)
+              (l/fresh [?func]
+                       (pred/functionexpression ?func)
+                       (l/project [?func ?jsan]
+                                  (membero ?scope (seq (.scope ?jsan ?func))))
+                       (l/== ?node ?func))
+              ]
+             [(l/lvaro ?scope)
+              (l/project [?node ?jsan]
+                         (membero ?scope (seq (.scope ?jsan ?node))))]
+             )))
 
 
 (defn
@@ -94,7 +108,7 @@
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/project [?jsan ?objectaddr]
-                      (l/== ?protos (.proto ?jsan ?objectaddr)))))
+                      (membero ?protos (seq (.proto ?jsan ?objectaddr))))))
 
 
 (defn
@@ -128,13 +142,15 @@
     ith argument to the object from ?objectaddr, or is the
     receiver if i = 0."
    [?objectaddr ?i ?argadr]
-   ;...
+   ;TODO
    )
 
 
 
 
 ;;; TESTS
+;; TODO: move tests in separate file
+
 
 ; test1
 ; (def src "var x = 1; x = 2;")
@@ -159,7 +175,7 @@
 ; (pred/js-print fir)
 ; (pred/js-print obj)
 
-;;; OBJECTS TEST
+;;; OBJECTS TESTS
 (pred/parseCode "var x = { foo: 42 };")
 (doAnalysis)
 (l/run* [?objs]
@@ -171,6 +187,26 @@
                                                           (pred/ast-name ?node "x")
                                                           (objects ?node ?objs))))))
 (l/run* [?node] (pred/ast-name ?node "x"))
+
+
+;;; SCOPE TESTS
+(pred/parseCode "var x = function () {}; x();")
+(doAnalysis)
+(l/run* [?scope]
+  (l/fresh [?func]
+    (pred/functionexpression ?func)
+    (scope ?func ?scope)))
+(def aScope (first (l/run* [?scope]
+  (l/fresh [?func]
+    (pred/functionexpression ?func)
+    (scope ?func ?scope)))))
+(l/run* [?func]
+    (scope ?func aScope)) ;equals function () {}
+(.-globala @jsa) ;global address
+
+(pred/parseCode "function add1(n){return n+1};")
+(doAnalysis)
+; TODO does not work with functiondeclarations yet.
 
 ; test 3
 ; (def src2 "var x = function () {}; x();")
@@ -184,7 +220,41 @@
 ; (pred/js-print scopeadr)
 ; (pred/js-print (.-globala jsa2))
 
-;;; PROPS TEST
+;;; PROTO TEST
+(pred/parseCode "function F() {}; var f = new F();")
+(doAnalysis)
+(l/run* [?protoaddr]
+  (l/fresh [?varf ?varfObj]
+    (pred/ast-variabledeclarationwithname ?varf "f")
+    (objects ?varf ?varfObj)
+    (proto ?varfObj ?protoaddr)))
+(l/run* [?protoaddr]
+  (l/fresh [?varf ?varfObj]
+    (pred/newexpression ?varf)
+    (objects ?varf ?varfObj)
+    (proto ?varfObj ?protoaddr)))
+
+(pred/parseCode "function F() {}; F.prototype = 123; var f = new F();")
+(doAnalysis)
+(l/run* [?protoaddr]
+  (l/fresh [?varf ?varfObj]
+    (pred/newexpression ?varf)
+    (objects ?varf ?varfObj)
+    (proto ?varfObj ?protoaddr))) ;should be empty
+
+; (def src1 "function F() {}; var f = new F();")
+; (def parsedast1 (js/createAst src1))
+; (def jsa1 (new js/JsAnalysis parsedast1))
+; (def newx (.toNode (.varsWithName (js/$$$ parsedast1) "f")))
+; (def objectadrs (.objects jsa1 newx))
+; (def fir (first objectadrs))
+; (def protoaddr (.proto jsa1 fir))
+; (pred/js-print newx)
+; (pred/js-print objectadrs)
+; (pred/js-print fir)
+; (pred/js-print protoaddr)
+
+;;; PROPS TESTS
 (pred/parseCode "var x = { y : 123 }; var z = { p : x };")
 (doAnalysis)
 (l/run* [?props]
@@ -198,7 +268,7 @@
     (pred/ast-variabledeclarationwithname ?varX "x")
     (objects ?varX ?varxObj)))
 
-;;; MAYHAVEPROP TEST
+;;; MAYHAVEPROP TESTS
 (pred/parseCode "var x = { y : 123 };")
 (doAnalysis)
 (l/run* [?v]
@@ -209,5 +279,6 @@
                   (l/== ?v (mayHaveProp ?objs "x")))
                  ))
 (pred/parseCode "var x = {}; x.y = 123;")
+(doAnalysis)
 
 

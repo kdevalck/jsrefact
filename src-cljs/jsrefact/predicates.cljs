@@ -249,6 +249,18 @@
   [?exp]
   (ast "ExpressionStatement" ?exp))
 
+(defn 
+  functionexpression
+  "Reify ?exp with all the 'FunctionExpression's from the ast"
+  [?exp]
+  (ast "FunctionExpression" ?exp))
+
+(defn
+  newexpression
+  "Reify ?exp with all the 'NewExpression's from the ast"
+  [?exp]
+  (ast "NewExpression" ?exp))
+
 (defn
   ast-arrayexpression
   "Reify ?arr with all arrayexpressions from input ?ast"
@@ -303,6 +315,11 @@
                                     (l/conde 
                                       [(l/== ?name (ast-property-value ?id "name"))
                                        (l/== ?ast ?id)]))))]))
+; TODO : add unit tests for ast-variabledeclarationwithname
+;(def temp (first (l/run* [?x] (ast-variabledeclarationwithname ?x "x"))))
+;(l/run* [?x] (ast-variabledeclarationwithname temp ?x)) ;result: "x"
+
+
 
 (defn
   function-name
