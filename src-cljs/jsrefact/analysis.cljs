@@ -50,6 +50,7 @@
   objects
   "Reification of the relation between an expression ?node and 
   the set of objects ?objects it can evaluate to"
+  ; can only receive newexpressions and functionexpressions
   [?node ?objects]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
@@ -144,6 +145,29 @@
    [?objectaddr ?i ?argadr]
    ;TODO
    )
+
+(defn
+  ret
+  "param ?objectaddr is an address which points to a function
+  param ?return is an object that may be returned as result from
+  the function. 
+  "
+  [?objectaddr ?return]
+  (l/fresh [?jsan]
+           (jsanalysis ?jsan)
+           (l/conda 
+             [(l/lvaro ?return)
+              (l/project [?jsan ?objectaddr]
+                         (membero ?return (seq (.ret ?jsan ?objectaddr))))]
+             [(l/lvaro ?objectaddr)
+              (l/fresh [?func ?funcAddr]
+                       (pred/functionexpression ?func)
+                       (objects ?func ?funcAddr)
+                       (l/project [?func ?jsan ?funcAddr]
+                                  (membero ?return (seq (.ret ?jsan ?funcAddr)))
+                                  (l/== ?objectaddr ?funcAddr)
+                                  ))]
+             )))
 
 
 
@@ -281,4 +305,27 @@
 (pred/parseCode "var x = {}; x.y = 123;")
 (doAnalysis)
 
+;;; RET TESTS
+(pred/parseCode "var x = function (y) { return y }; x(x);")
+(doAnalysis)
+(l/run* [?returnAddr]
+  (l/fresh [?funcX ?funcXaddr]
+    (pred/functionexpression ?funcX)
+    (objects ?funcX ?funcXaddr)
+    (ret ?funcXaddr ?returnAddr)))
+(def functionX (first (l/run* [?funcXaddr]
+  (l/fresh [?funcX]
+    (pred/functionexpression ?funcX)
+    (objects ?funcX ?funcXaddr)))))
+(l/run* [?funcXaddr]
+    (ret ?funcXaddr functionX))
+; TODO: test uitbreiden
 
+; (def src1 "var x = function (y) { return y }; x(x);")
+; (def parsedast1 (js/createAst src1))
+; (def jsa1 (new js/JsAnalysis parsedast1))
+; (def newx (.toNode (.varsWithName (js/$$$ parsedast1) "x")))
+; (def func (.toNode (.functionExpressions (js/$$$ parsedast1))))
+; (def objectadrs (.objects jsa1 newx))
+; (def fir (first objectadrs))
+; (def retur (.ret jsa1 fir))
