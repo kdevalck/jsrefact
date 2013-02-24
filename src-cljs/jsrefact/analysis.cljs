@@ -42,7 +42,7 @@
   "Reifies ?jsan with the Javascript analysis object"
   [?jsan]
   (l/== ?jsan @jsa))
-; move to unit tests
+; TODO : move to unit tests
 ;pred/js-print (first (l/run* [?p] (jsanalysis ?p))))
 
 
@@ -65,12 +65,11 @@
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/conda
-             ; if ?node is unground
              [(l/lvaro ?node)
               ;TODO
               ]
-             ; if ?node is ground
-             [(l/project [?node ?jsan]
+             [(l/lvaro ?objects)
+              (l/project [?node ?jsan]
                          (membero ?objects (seq (.objects ?jsan ?node))))]
              )))
 
@@ -101,16 +100,24 @@
 (defn
   proto
   "The reification of the relation between any object ?objectaddr 
-  and its possible prototype objects, ?protos, of the objects ?objectaddr can
+  and its possible prototype objects, ?protoaddr, of the objects ?objectaddr can
   represent at runtime.
   
   param ?objectaddr is an address representing an object."
-  [?objectaddr ?protos]
+  [?objectaddr ?protoaddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/project [?jsan ?objectaddr]
-                      (membero ?protos (seq (.proto ?jsan ?objectaddr))))))
-
+           (l/conda 
+             [(l/lvaro ?objectaddr)
+              (l/fresh [?anObject]
+                (l/project [?jsan] (membero ?anObject (seq (.allObjects ?jsan)))
+                (l/project [?anObject]
+                         (membero ?protoaddr (seq (.proto ?jsan ?anObject)))
+                         (l/== ?objectaddr ?anObject))))]
+             [(l/lvaro ?protoaddr)
+              (l/project [?jsan ?objectaddr]
+                         (membero ?protoaddr (seq (.proto ?jsan ?objectaddr))))])
+           ))
 
 (defn
     props
@@ -118,12 +125,13 @@
      the set of objects, ?props, that could be stored in the
      properties of object ?obj.
 
-     param ?obj is an address representing an object"
-    [?obj ?props]
+     param ?obj is an address representing an object
+     param ?prop is an address representing a property of ?obj"
+    [?obj ?prop]
     (l/fresh [?jsan]
         (jsanalysis ?jsan)
         (l/project [?obj ?jsan]
-            (membero ?props (seq (.props ?jsan ?obj))))))
+            (membero ?prop (seq (.props ?jsan ?obj))))))
 
 (defn
     mayHaveProp
@@ -137,14 +145,49 @@
 (defn
   arg
   "param ?objectaddr is an address of a functionexpression
-   param ?i is the i-th argument passed to the object
-    (or i = 0 the receiver)
-   param ?arg is the set of objects that may be passed as
-    ith argument to the object from ?objectaddr, or is the
-    receiver if i = 0."
-   [?objectaddr ?i ?argadr]
-   ;TODO
-   )
+  param ?i is the i-th argument passed to the object
+  (or i = 0 the receiver)
+  param ?argadd is the set of objects that may be passed as
+  ith argument to the object from ?objectaddr, or is the
+  receiver if i = 0."
+  [?objectaddr ?i ?argaddr]
+  (l/fresh [?jsan]
+           (jsanalysis ?jsan)
+           (l/conda 
+             [(l/lvaro ?i)
+              (l/fresh [?func ?funcAddr ?argLength ?argNumb]
+                (pred/functionexpression ?func)
+                (objects ?func ?funcAddr)
+                (l/project [?func] (l/== ?argLength (.-length (.-params ?func))))
+                (l/project [?argLength] (membero ?argNumb (range 1 (+ ?argLength 1))))
+                (l/project [?jsan ?funcAddr ?argNumb] (membero ?argaddr (seq (.arg ?jsan ?funcAddr ?argNumb))))
+                (l/== ?objectaddr ?funcAddr)
+                (l/== ?i ?argNumb)
+                )
+              ]
+             [(l/lvaro ?argaddr)
+              (l/project [?jsan ?objectaddr ?i]
+                         (membero ?argaddr (seq (.arg ?jsan ?objectaddr ?i))))])))
+
+(defn
+  receiver
+  ""
+  [?objectaddr ?receiveraddr]
+  (l/fresh [?jsan]
+           (jsanalysis ?jsan)
+           (l/conda
+             [(l/lvaro ?objectaddr)
+              (l/fresh [?func ?funcAddr]
+                       (pred/functionexpression ?func)
+                       (objects ?func ?funcAddr)
+                       (l/project [?jsan ?funcAddr]
+                          (membero ?receiveraddr (seq (.arg ?jsan ?funcAddr 0)))
+                          (l/== ?objectaddr ?funcAddr)))
+              ]
+             [(l/lvaro ?receiveraddr)
+              (l/project [?jsan ?objectaddr]
+                         (membero ?receiveraddr (seq (.arg ?jsan ?objectaddr 0))))
+              ])))
 
 (defn
   ret
@@ -252,11 +295,18 @@
     (pred/ast-variabledeclarationwithname ?varf "f")
     (objects ?varf ?varfObj)
     (proto ?varfObj ?protoaddr)))
-(l/run* [?protoaddr]
+(def protoAddr (first (l/run* [?protoaddr]
   (l/fresh [?varf ?varfObj]
     (pred/newexpression ?varf)
     (objects ?varf ?varfObj)
-    (proto ?varfObj ?protoaddr)))
+    (proto ?varfObj ?protoaddr)))))
+(l/run* [?objectAddr] (proto ?objectAddr protoAddr))
+; above same as underneath
+(l/run* [?varfObj]
+  (l/fresh [?varf]
+    (pred/newexpression ?varf)
+    (objects ?varf ?varfObj)))
+
 
 (pred/parseCode "function F() {}; F.prototype = 123; var f = new F();")
 (doAnalysis)
@@ -319,6 +369,19 @@
     (objects ?funcX ?funcXaddr)))))
 (l/run* [?funcXaddr]
     (ret ?funcXaddr functionX))
+(pred/parseCode "var z = {y : 5}; var x = function (y) { return y }; x(x); x(z);")
+(doAnalysis)
+(def x (first (l/run* [?funcXaddr]
+  (l/fresh [?funcX]
+    (pred/functionexpression ?funcX)
+    (objects ?funcX ?funcXaddr)))))
+(def z (second (l/run* [?returnAddr]
+  (l/fresh [?funcX ?funcXaddr]
+    (pred/functionexpression ?funcX)
+    (objects ?funcX ?funcXaddr)
+    (ret ?funcXaddr ?returnAddr)))))
+(l/run* [?funcXaddr]
+        (ret ?funcXaddr z)) ; ==> should return x as result
 ; TODO: test uitbreiden
 
 ; (def src1 "var x = function (y) { return y }; x(x);")
@@ -329,3 +392,75 @@
 ; (def objectadrs (.objects jsa1 newx))
 ; (def fir (first objectadrs))
 ; (def retur (.ret jsa1 fir))
+
+;;; ARG TESTS
+(pred/parseCode "var x = function (y) { return y }; x(x);")
+(doAnalysis)
+(l/run* [?argaddr]
+        (l/fresh [?funcX ?funcXaddr]
+                 (pred/functionexpression ?funcX)
+                 (objects ?funcX ?funcXaddr)
+                 (arg ?funcXaddr 1 ?argaddr)))
+(def arg1 (first (l/run* [?objs]
+        (l/fresh [?node]
+                 (pred/ast-variabledeclarationwithname ?node "x")
+                 (objects ?node ?objs)))))
+(l/run* [?func] (l/fresh [?i] (arg ?func ?i arg1)))
+(pred/parseCode "var x = function (y, z) { return y }; x(x,x);")
+(doAnalysis)
+(l/run* [?argaddr]
+        (l/fresh [?funcX ?funcXaddr]
+                 (pred/functionexpression ?funcX)
+                 (objects ?funcX ?funcXaddr)
+                 (arg ?funcXaddr 1 ?argaddr)))
+(l/run* [?argaddr]
+        (l/fresh [?funcX ?funcXaddr]
+                 (pred/functionexpression ?funcX)
+                 (objects ?funcX ?funcXaddr)
+                 (arg ?funcXaddr 2 ?argaddr))) 
+; both should be the same
+(l/run* [?func] (l/fresh [?i] (arg ?func ?i arg1)))
+; length should be two
+(l/run* [?i] (l/fresh [?func] (arg ?func ?i arg1))) 
+; should be (1 2)
+(l/run* [?i] (arg arg1 ?i arg1)) ; should also be (1 2)
+
+
+;;; RECEIVER TESTS
+(pred/parseCode "var x = function (y) { return y }; x(x);")
+(doAnalysis)
+(l/run* [?receiveraddr]
+        (l/fresh [?funcY ?funcYaddr]
+                 (pred/functionexpression ?funcY)
+                 (objects ?funcY ?funcYaddr)
+                 (receiver ?funcYaddr ?receiveraddr)))
+(.-globala @jsa)
+(pred/parseCode "var x = { y : function (z) { return z }}; x.y(x);")
+(doAnalysis)
+(l/run* [?receiveraddr]
+        (l/fresh [?funcY ?funcYaddr]
+                 (pred/functionexpression ?funcY)
+                 (objects ?funcY ?funcYaddr)
+                 (receiver ?funcYaddr ?receiveraddr)))
+; function Y as input
+; returns var x as output
+(def varx (first (l/run* [?objs]
+        (l/fresh [?node]
+                 (pred/ast-variabledeclarationwithname ?node "x")
+                 (objects ?node ?objs)))))
+(l/run* [?funcaddr]
+        (receiver ?funcaddr varx))
+;varx as input
+; returns function y
+
+
+;;; allObjects TESTS
+(pred/parseCode  "var o1 = {}; var o2 = {}")
+(doAnalysis)
+(l/run* [?obj]
+  (l/fresh [?jsan]
+    (jsanalysis ?jsan)
+    (l/project [?jsan]
+      (membero ?obj (seq (.allObjects ?jsan))))))
+
+

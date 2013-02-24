@@ -196,3 +196,14 @@ JsAnalysis.prototype.ret =
     var returnObjects = apps.flatMap(this.rets.getSetEntry, this.rets);
     return returnObjects;
   }
+
+JsAnalysis.prototype.allObjects = 
+function (node) 
+{ 
+return this.store.entries.flatMap( 
+function (entry) 
+{ 
+var v = entry[1].aval; 
+return (v.isBenv && v.isObject()) ? [entry[0]] : []; 
+}); 
+} 
