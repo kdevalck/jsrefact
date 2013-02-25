@@ -173,7 +173,7 @@ ResultState.prototype.returnsResult =
   {
     if (!this.result.join)
     {
-      print("no join", this.result, this.result.constructor);
+//      print("no join", this.result, this.result.constructor);
     }
     assertDefinedNotNull(value.join);
     this.result = this.result.join(value);

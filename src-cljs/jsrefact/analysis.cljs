@@ -83,18 +83,10 @@
   [?node ?scope]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/conda 
-             [(l/lvaro ?node)
-              (l/fresh [?func]
-                       (pred/functionexpression ?func)
-                       (l/project [?func ?jsan]
-                                  (membero ?scope (seq (.scope ?jsan ?func))))
-                       (l/== ?node ?func))
-              ]
-             [(l/lvaro ?scope)
-              (l/project [?node ?jsan]
-                         (membero ?scope (seq (.scope ?jsan ?node))))]
-             )))
+                       (pred/functionexpression ?node)
+                       (l/project [?node ?jsan]
+                                  (membero ?scope (seq (.scope ?jsan ?node)))))
+             )
 
 
 (defn
@@ -149,11 +141,9 @@
 (defn
   arg
   "param ?objectaddr is an address of a functionexpression
-  param ?i is the i-th argument passed to the object
-  (or i = 0 the receiver)
+  param ?i is the i-th argument passed to the object.
   param ?argadd is the set of objects that may be passed as
-  ith argument to the object from ?objectaddr, or is the
-  receiver if i = 0."
+  ith argument to the function expression"
   [?objectaddr ?i ?argaddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
@@ -175,7 +165,11 @@
 
 (defn
   receiver
-  ""
+  "Reification of the relation between the functionExpression
+   and the receiver of it.
+
+  param ?objectaddr is an address of a functionExpression.
+  param ?receiveraddr is the receiver address."
   [?objectaddr ?receiveraddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
@@ -408,6 +402,7 @@
 ; (def fir (first objectadrs))
 ; (def retur (.ret jsa1 fir))
 
+
 ;;; ARG TESTS
 (pred/parseCode "var x = function (y) { return y }; x(x);")
 (doAnalysis)
@@ -477,12 +472,3 @@
     (jsanalysis ?jsan)
     (l/project [?jsan]
       (membero ?obj (seq (.allObjects ?jsan))))))
-
-
-; (pred/parseCode "var z = {y : 5}; var x = function (y) { return y }; x(x); x(z);")
-; (doAnalysis)
-; (l/run* [?out]
-;   (l/fresh [?ex ?ne ?t]
-;     (pred/functionexpression ?ex)
-;     (pred/ast-variabledeclarationwithname ?ne "z")
-;     (conso ?ex ?ne ?out)))

@@ -448,7 +448,9 @@ function cons(x, l)
 
 
 // debug
-function d(value) { print(Array.prototype.slice.call(arguments)); return value; }
+function d(value) { 
+	//print(Array.prototype.slice.call(arguments)); 
+	return value; }
 function dreadline() { var str = readline(); if (str === ":b") { throw new Error(":b"); }}
 
 // assertions

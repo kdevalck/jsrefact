@@ -2537,7 +2537,7 @@ function ipdaEval(node0, state0, config)
         break;
       }
     }
-    print("breakValue", breakValue, stack);
+//    print("breakValue", breakValue, stack);
     
     if (node.label === null)
     {
@@ -3606,10 +3606,10 @@ function ipdaEval(node0, state0, config)
         throw new Error("state space overflow");
       }
 		  var task = tasks[0];
-		  print("\nSTART", task, "-- length", tasks.length);
+//		  print("\nSTART", task, "-- length", tasks.length);
 			var taskResult = task.execute();
 			assertDefinedNotNull(taskResult);
-			print("END", task, "-- result", taskResult, "-- total", ++totalNumTasks);
+//			print("END", task, "-- result", taskResult, "-- total", ++totalNumTasks);
 			tasks = tasks.slice(1).concat(taskResult);
 		}		
 	}
@@ -4056,12 +4056,12 @@ function ipdaEval(node0, state0, config)
 		      var value = stack[0];
           var stack2 = stack.slice(1);
           var printer = new ConcretePrinter(userLattice, store);
-		      print(value.accept(printer));
+//		      print(value.accept(printer));
 		      putstr("> ");
 		      var src = readline();
 		      if (":q".equals(src))
 		      {
-		        print("Bye!");
+//		        print("Bye!");
 		        return [];
 		      }
 		      try
@@ -4071,8 +4071,8 @@ function ipdaEval(node0, state0, config)
 		      }
 		      catch (e)
 		      { 
-		        print(e);
-		        print(e.stack);
+//		        print(e);
+//		        print(e.stack);
 		        return replCont.execute(stack2.addFirst(BOT), store, time, state);
 		      }
 		    });
@@ -4111,8 +4111,8 @@ function jipdaRepl(k, n)
   }
   catch (e)
   {
-    print(e);
-    print(e.stack);
+//    print(e);
+//    print(e.stack);
   }
 }
 
@@ -4127,8 +4127,8 @@ function concRepl(k, n)
   }
   catch (e)
   {
-    print(e);
-    print(e.stack);
+//    print(e);
+//    print(e.stack);
   }
 }
 
