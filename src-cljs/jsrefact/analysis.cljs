@@ -110,10 +110,10 @@
            (l/conda 
              [(l/lvaro ?objectaddr)
               (l/fresh [?anObject]
-                (l/project [?jsan] (membero ?anObject (seq (.allObjects ?jsan)))
-                (l/project [?anObject]
-                         (membero ?protoaddr (seq (.proto ?jsan ?anObject)))
-                         (l/== ?objectaddr ?anObject))))]
+                       (l/project [?jsan] (membero ?anObject (seq (.allObjects ?jsan)))
+                                  (l/project [?anObject]
+                                             (membero ?protoaddr (seq (.proto ?jsan ?anObject)))
+                                             (l/== ?objectaddr ?anObject))))]
              [(l/lvaro ?protoaddr)
               (l/project [?jsan ?objectaddr]
                          (membero ?protoaddr (seq (.proto ?jsan ?objectaddr))))])
@@ -130,8 +130,12 @@
     [?obj ?prop]
     (l/fresh [?jsan]
         (jsanalysis ?jsan)
-        (l/project [?obj ?jsan]
-            (membero ?prop (seq (.props ?jsan ?obj))))))
+        (l/project [?jsan]
+              (membero ?obj (rest (seq (.allObjects ?jsan))))
+              ; use rest to remove globala from list of objects.
+              (l/project [?obj]
+                (membero ?prop (seq (.props ?jsan ?obj))))))
+        )
 
 (defn
     mayHaveProp
@@ -341,6 +345,17 @@
   (l/fresh [?varX]
     (pred/ast-variabledeclarationwithname ?varX "x")
     (objects ?varX ?varxObj)))
+(def varX (first (l/run* [?varxObj]
+  (l/fresh [?varX]
+    (pred/ast-variabledeclarationwithname ?varX "x")
+    (objects ?varX ?varxObj)))))
+(l/run* [?varzObj]
+    (props ?varzObj varX))
+(l/run* [?varzObj]
+  (l/fresh [?varZ]
+    (pred/ast-variabledeclarationwithname ?varZ "z")
+    (objects ?varZ ?varzObj)))
+
 
 ;;; MAYHAVEPROP TESTS
 (pred/parseCode "var x = { y : 123 };")
@@ -464,3 +479,10 @@
       (membero ?obj (seq (.allObjects ?jsan))))))
 
 
+; (pred/parseCode "var z = {y : 5}; var x = function (y) { return y }; x(x); x(z);")
+; (doAnalysis)
+; (l/run* [?out]
+;   (l/fresh [?ex ?ne ?t]
+;     (pred/functionexpression ?ex)
+;     (pred/ast-variabledeclarationwithname ?ne "z")
+;     (conso ?ex ?ne ?out)))

@@ -238,6 +238,12 @@
   (ast "ThisExpression" ?this))
 
 (defn
+  objectexpression
+  "Reify ?exp with all the 'ObjectExpression's from the ast"
+  [?object]
+  (ast "ObjectExpression" ?object))
+
+(defn
   functiondeclaration
   "Reify ?exp with all the 'FunctionDeclaration's from the ast"
   [?funct]
