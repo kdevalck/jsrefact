@@ -24,13 +24,13 @@
 ; 			(l/== ?r ?node)])))))
 
 
-(defn
-  ast-property-set-value
-  "Set the value of the specified property
-    int the ast"
-  [ast property value]
-  (aset ast property value)
-  ast)
+; (defn
+;   ast-property-set-value
+;   "Set the value of the specified property
+;     int the ast"
+;   [ast property value]
+;   (aset ast property value)
+;   ast)
 
 (defn
   ast-tag

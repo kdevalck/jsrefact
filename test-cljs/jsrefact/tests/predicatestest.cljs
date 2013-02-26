@@ -30,7 +30,7 @@
   
   
   
-  (println "  AST Unit tests started.")
+  (println "  AST predicates Unit tests started.")
   
   (assert (= (ast-property-value @parsed "type") "Program"))
   
@@ -223,5 +223,5 @@
   (assert (= (count (l/run* [?n] (ast-name ?n "y"))) 0))
   
   
-  (println "  AST Unit tests finished."))
+  (println "  AST predicates Unit tests finished."))
 
