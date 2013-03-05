@@ -1,20 +1,18 @@
 (ns jsrefact.tests.predicatestest
   	(:use-macros [cljs.core.logic.macros :only [run*]])
   	(:require-macros [cljs.core.logic.macros :as l])
-  	(:use [jsrefact.predicates :only [js-print esprimaParser ast-kind ast-property-value ast-property-set-value
-                                     		ast-properties ast? program child parsed has progrm child+ ast ast-with-input ast-literal
-                                     ast-value ast-name parseCode]]))
+  	(:use [jsrefact.predicates :only [ast-kind ast-property-value ast-property-set-value
+                                     		ast-properties ast? program child has child+ ast ast-name]])
+    (:require [jsrefact.project :as proj]))
+
+;(parseCode "var x = 43")
+;(parseCode "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;")
+;(parseCode "var i = 0; var x = null; var patt='true'; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Inc();" (js* "{ loc: true }"))
+;(parseCode "function add1(n){return n+1}; var i = 0; function inc(f, p){return f(p)}; inc(add1,i);" (js* "{ loc: true }"))
+;(parseCode "var k = true; var l = 0; var m = 'test'; var n = [1,2];" (js* "{ loc: true }"))
 
 (defn run []
-  ; Parse a sample program
-  ;(def parsedTest (.parse esprimaParser "var x = 43"))
-  ;(def progrmTest (.-body parsedTest))
-  ; Swap the progrm from jsrefact.core to the programTest
-  ;  parsed inside jsrefact.tests.asttest to provide a 
-  ;  ast object to the unittests.
-  ;(swap! progrm (fn [progrmT] progrmTest))
-
-  (parseCode "var x = 43")
+  (proj/analyze "var x = 43")
   
   (def one (first 
              (l/run* [?value]
@@ -32,32 +30,32 @@
   
   (println "  AST predicates Unit tests started.")
   
-  (assert (= (ast-property-value @parsed "type") "Program"))
+  (assert (= (ast-property-value (proj/parsed) "type") "Program"))
   
-  (assert (= (ast-property-value (first @progrm) "type") "VariableDeclaration"))
+  (assert (= (ast-property-value (first (proj/program)) "type") "VariableDeclaration"))
   
-  (assert (= (instance? js/Array (ast-property-value (first @progrm) "declarations")) true))
+  (assert (= (instance? js/Array (ast-property-value (first (proj/program)) "declarations")) true))
   
-  (assert (= (first (ast-properties @parsed)) "type"))
+  (assert (= (first (ast-properties (proj/parsed))) "type"))
   
-  (assert (= (first (ast-properties (first @progrm))) "type"))
+  (assert (= (first (ast-properties (first (proj/program)))) "type"))
   
-  (assert (= (count (ast-properties (first @progrm))) 3))
+  (assert (= (count (ast-properties (first (proj/program)))) 3))
   
-  (assert (= (ast-kind @parsed) "Program")) 
+  (assert (= (ast-kind (proj/parsed)) "Program"))
   
-  (assert (= (ast-kind (first @progrm)) "VariableDeclaration"))
+  (assert (= (ast-kind (first (proj/program))) "VariableDeclaration"))
   
   (let [fakeAst 5]
     	(assert (not= (ast? fakeAst) true))
-    	(assert (= (ast? @parsed) true)))
+    	(assert (= (ast? (proj/parsed)) true)))
   
-  (assert (= (ast? (first @progrm)) true))
+  (assert (= (ast? (first (proj/program))) true))
   
   (assert (= (.-type (first (l/run* [?p] (program ?p)))) "VariableDeclaration"))
   
   ; program
-  (assert (= (first (l/run* [?p] (program ?p))) (first @progrm))) 
+  (assert (= (first (l/run* [?p] (program ?p))) (first (proj/program))))
   
   ; child
   (assert (= (first (l/run* [?prop]
@@ -168,46 +166,7 @@
                                      (ast ?kind ?node))))
              "VariableDeclaration"))
   
-  ; ast-with-input
-  
-  (assert (= (count (l/run* [?kind]
-                            (l/fresh [?nodeOut ?no]
-                                     (l/== ?no one)
-                                     (ast-with-input ?kind ?no ?nodeOut))))
-             3))
-  
-  (assert (= (first (l/run* [?kind]
-                            (l/fresh [?nodeOut ?no]
-                                     (l/== ?no one)
-                                     (ast-with-input ?kind ?no ?nodeOut))))
-             "VariableDeclarator"))
-  
-  (assert (= (first (l/run* [?kind]
-                            (l/fresh [?nodeOut ?no]
-                                     (l/== ?no sec)
-                                     (ast-with-input ?kind ?no ?nodeOut))))
-             "Literal"))
-  
-  (assert (= (count (l/run* [?kind]
-                            (l/fresh [?nodeOut ?no]
-                                     (l/== ?no sec)
-                                     (ast-with-input ?kind ?no ?nodeOut))))
-             1))
-  
-  ; ast-literal
-  
-  (assert (= (count (l/run* [?ast] 
-                            (l/fresh [?p] 
-                                     (program ?p) 
-                                     (ast-literal ?p ?ast)))) 1))
-  
-  ; ast-literal & ast-value
-  
-  (assert (= (first (l/run* [?value] 
-                            (l/fresh [?p ?ast] 
-                                     (program ?p) 
-                                     (ast-literal ?p ?ast)
-                                     (ast-value ?ast ?value)))) 43))
+
   
   ; ast-name
   (assert (= (count (l/run* [?n] (ast-name ?n "x"))) 1))

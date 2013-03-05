@@ -1,77 +1,43 @@
 (ns jsrefact.analysis
   ^{:doc "Logic layer above JIPDA Javascript analysis
-            This queries is mainly based on the paper: Tool-supported
-            Refactogin for Javascript by Asger Feldthaus."}
+            These queries are mainly based on the paper: Tool-supported
+            Refactoring for Javascript by Asger Feldthaus."}
   (:use [esp :only [esprima parse]]
     [cljs.core.logic :only [membero lvaro nonlvaro conda conso]])
   (:require-macros [cljs.core.logic.macros :as l])
   (:require 
-            [common :as comm]
-            [lattice :as lat]
-            [toplattice :as tlat]
-            [setlattice :as slat]
-            [cplattice :as clat]
-            [jiaddress :as addr]
-            [timedefa :as tdefa]
-            [tagag :as tag]
-            [concreteag :as conc]
-            [benv.defaultBenv :as defb]
-            [jistate :as sta]
-            [jipdaast :as as]
-            [visited :as vis]
-            [concreteprinter :as concp]
-            [jipda :as ji]
-            [depend :as dep]
-            [transform :as tra]
-            [jijsanalysis :as jijsa]
+            [jsrefact.project :as proj]
             [jsrefact.predicates :as pred]
+            [jsrefact.misc :as misc]
             ))
 
 
-(def jsa (atom (new js/JsAnalysis @pred/parsed)))
-
-(defn
-  doAnalysis
-  "Do the javascript analysis using JIPDA and put in atom jsa"
-  []
-  (def tempAnalysis (new js/JsAnalysis @pred/parsed))
-  (swap! jsa (fn [analysis] tempAnalysis)))
-
 (defn
   jsanalysis
-  "Reifies ?jsan with the Javascript analysis object"
+  "Unifies ?jsan with the Javascript analysis object"
   [?jsan]
-  (l/== ?jsan @jsa))
-; TODO : move to unit tests
-;pred/js-print (first (l/run* [?p] (jsanalysis ?p))))
+  (l/== ?jsan (proj/jsa)))
 
+(defn 
+  globala
+  "Unifies ?glob with the globaladdress received from
+  the analysis."
+  [?glob]
+  (l/fresh [?jsan]
+           (jsanalysis ?jsan)
+           (l/project [?jsan]
+                      (l/== ?glob (.-globala ?jsan)))))
 
 (defn
   objects
   "Reification of the relation between an expression ?node and 
   the set of objects ?objects it can evaluate to"
-  ; can only receive newexpressions and functionexpressions
   [?node ?objects]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/project [?node ?jsan]
                       (membero ?objects (seq (.objects ?jsan ?node))))))
 
-; wip
-(defn
-  objectss
-  "test"
-  [?node ?objects]
-  (l/fresh [?jsan]
-           (jsanalysis ?jsan)
-           (l/conda
-             [(l/lvaro ?node)
-              ;TODO
-              ]
-             [(l/lvaro ?objects)
-              (l/project [?node ?jsan]
-                         (membero ?objects (seq (.objects ?jsan ?node))))]
-             )))
 
 (defn
   scope
@@ -136,7 +102,7 @@
     param prop is a property (string)
     param obj is an address pointing to an object"
     [obj prop]
-    (.mayHaveProp @jsa obj prop))
+    (.mayHaveProp (proj/jsa) obj prop))
 
 (defn
   arg
@@ -216,65 +182,15 @@
 ;;; TESTS
 ;; TODO: move tests in separate file
 
-
-; test1
-; (def src "var x = 1; x = 2;")
-; (def parsedast (js/createAst src))
-; (def jsa (new js/JsAnalysis parsedast))
-; (def varx (.toNode (.varsWithName (js/$$$ parsedast) "x")))
-; (def valx (.value jsa varx))
-; (pred/js-print varx)
-; (pred/js-print valx)
-
-
-; test 2
-; (def src1 "var x = { foo: 42 };")
-; (def parsedast1 (js/createAst src1))
-; (def jsa1 (new js/JsAnalysis parsedast1))
-; (def varx1 (.toNode (.varsWithName (js/$$$ parsedast1) "x")))
-; (def objectadr (.objects jsa1 varx1))
-; (def fir (first objectadr))
-; (def obj (.lookup jsa1 fir))
-; (pred/js-print varx1)
-; (pred/js-print objectadr)
-; (pred/js-print fir)
-; (pred/js-print obj)
-
 ;;; OBJECTS TESTS
-(pred/parseCode "var x = { foo: 42 };")
-(doAnalysis)
-(l/run* [?objs]
-        (l/fresh [?node]
-                 (pred/ast-variabledeclarationwithname ?node "x")
-                 (objects ?node ?objs)))
-(.isObject (.lookup @jsa (first (l/run* [?objs]
-                                                 (l/fresh [?node]
-                                                          (pred/ast-name ?node "x")
-                                                          (objects ?node ?objs))))))
-(l/run* [?node] (pred/ast-name ?node "x"))
+; (proj/analyze "var x = { foo: 42 };")
+; (l/run* [?objs]
+;         (l/fresh [?node]
+;                  (pred/ast-variabledeclarationwithname ?node "x")
+;                  (objects ?node ?objs)))
+; (.isObject (.lookup (proj/jsa) (first (l/run* [?objs]
+;                                                  (l/fresh [?node]
+;                                                           (pred/ast-name ?node "x")
+;                                                           (objects ?node ?objs))))))
+; (l/run* [?node] (pred/ast-name ?node "x"))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;;; allObjects TESTS
-(pred/parseCode  "var o1 = {}; var o2 = {}")
-(doAnalysis)
-(l/run* [?obj]
-  (l/fresh [?jsan]
-    (jsanalysis ?jsan)
-    (l/project [?jsan]
-      (membero ?obj (seq (.allObjects ?jsan))))))

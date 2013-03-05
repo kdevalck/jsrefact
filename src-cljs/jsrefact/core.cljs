@@ -8,13 +8,10 @@
   	(:require-macros [cljs.core.logic.macros :as l]
                     [clojure.tools.macro :as mu])
   	(:use [clojure.walk :only [walk]])
-  	(:require [clojure.browser.repl :as repl]
-             [jsrefact.predicates :as pred]))
+  	(:require [clojure.browser.repl :as repl]))
+
 
 ;; browser connected REPL
 (repl/connect "http://localhost:9000/repl")
 
 
-; Give the code to be parsed as parameter to parseCode
-;  to setup.
-; (parseCode "var x = 43")

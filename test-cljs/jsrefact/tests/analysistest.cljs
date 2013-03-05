@@ -1,29 +1,31 @@
 (ns jsrefact.tests.analysistest
   (:use-macros [cljs.core.logic.macros :only [run*]])
   (:require-macros [cljs.core.logic.macros :as l])
-  (:use [jsrefact.analysis :only [doAnalysis jsa scope proto objects props mayHaveProp ret arg receiver]])
+  (:use [jsrefact.analysis :only [jsanalysis globala scope proto objects props mayHaveProp ret arg receiver]])
   (:require 
     [jsrefact.predicates :as pred]
-    [jsrefact.analysis :as analysis])
+    [jsrefact.project :as proj])
   )
-
 
 
 (defn run []
   (println "  Analysis predicates unit tests started.")
   
-  
+  ;;; ANALYSIS TESTS
+  ;;;;;;;;;;;;;;;;;;
+  (proj/analyze "var x = 42")
+  (assert (= (proj/jsa) (first (l/run* [?p] (jsanalysis ?p)))))
+  (assert (= (.-globala (proj/jsa)) (first (l/run* [?gl] (globala ?gl)))))
   ;;; SCOPE TESTS
   ;;;;;;;;;;;;;;;
-  (pred/parseCode "var x = function () {}; x();")
-  (doAnalysis)
+  (proj/analyze "var x = function () {}; x();")
   (def funcexpr (first (l/run* [?scope] (pred/functionexpression ?scope))))
-  (def globalscope (.-globala @jsa))
-  (assert (= globalscope (first 
-                           (l/run* [?scope]
-                                   (l/fresh [?func]
-                                            (pred/functionexpression ?func)
-                                            (scope ?func ?scope))))))
+  (assert (= (first (l/run* [?gl] (globala ?gl))) 
+             (first 
+               (l/run* [?scope]
+                       (l/fresh [?func]
+                                (pred/functionexpression ?func)
+                                (scope ?func ?scope))))))
   (def aScope (first (l/run* 
                        [?scope]
                        (l/fresh [?func]
@@ -32,24 +34,23 @@
   (assert (= funcexpr (first (l/run* [?func]
                                      (scope ?func aScope)))))
   
-  (pred/parseCode "function add1(n){return n+1};")
-  (doAnalysis)
+  (proj/analyze "function add1(n){return n+1};")
   ; TODO does not work with functiondeclarations yet.
   
   
   ;;; PROTO TESTS
   ;;;;;;;;;;;;;;;
-  (pred/parseCode "function F() {}; var f = new F();")
-  (doAnalysis)
+  (proj/analyze "function F() {}; var f = new F();")
   (def protoAddr (first (l/run* [?protoaddr]
                                 (l/fresh [?varf ?varfObj]
                                          (pred/newexpression ?varf)
                                          (objects ?varf ?varfObj)
                                          (proto ?varfObj ?protoaddr)))))
   (assert (= protoAddr (first (l/run* [?protoaddr]
-                                      (l/fresh [?varf ?varfObj]
-                                               (pred/ast-variabledeclarationwithname ?varf "f")
-                                               (objects ?varf ?varfObj)
+                                      (l/fresh [?varf ?varfObj ?ide]
+                                               (pred/variabledeclaration-name ?varf "f")
+                                               (pred/has "id" ?varf ?ide)
+                                               (objects ?ide ?varfObj)
                                                (proto ?varfObj ?protoaddr))))))
   (def newFAddress (first (l/run* [?varfObj]
                                   (l/fresh [?varf]
@@ -57,58 +58,60 @@
                                            (objects ?varf ?varfObj)))))
   (assert (= newFAddress (first (l/run* [?objectAddr] (proto ?objectAddr protoAddr)))))
   
-  (pred/parseCode "function F() {}; F.prototype = 123; var f = new F();")
-  (doAnalysis)
+  (proj/analyze "function F() {}; F.prototype = 123; var f = new F();")
   (assert (= () (l/run* [?protoaddr]
                         (l/fresh [?varf ?varfObj]
                                  (pred/newexpression ?varf)
                                  (objects ?varf ?varfObj)
                                  (proto ?varfObj ?protoaddr)))))
   
-  
+ 
   ;;; PROPS TESTS
   ;;;;;;;;;;;;;;;
-  (pred/parseCode "var x = { y : 123 }; var z = { p : x };")
-  (doAnalysis)
+  (proj/analyze "var x = { y : 123 }; var z = { p : x };")
   (def objectX (first (l/run* [?varxObj]
-                              (l/fresh [?varX]
-                                       (pred/ast-variabledeclarationwithname ?varX "x")
-                                       (objects ?varX ?varxObj)))))
+                              (l/fresh [?varX ?ide]
+                                       (pred/variabledeclaration-name ?varX "x")
+                                       (pred/has "id" ?varX ?ide)
+                                       (objects ?ide ?varxObj)))))
   (assert (= objectX (first (l/run* [?props]
-                                    (l/fresh [?varZ ?varzObj]
-                                             (pred/ast-variabledeclarationwithname ?varZ "z")
-                                             (objects ?varZ ?varzObj)
+                                    (l/fresh [?varZ ?varzObj ?ide]
+                                             (pred/variabledeclaration-name ?varZ "z")
+                                             (pred/has "id" ?varZ ?ide)
+                                             (objects ?ide ?varzObj)
                                              (props ?varzObj ?props))))))
   (def objectZ (first (l/run* [?varzObj]
-                              (l/fresh [?varZ]
-                                       (pred/ast-variabledeclarationwithname ?varZ "z")
-                                       (objects ?varZ ?varzObj)))))
+                              (l/fresh [?varZ ?ide]
+                                       (pred/variabledeclaration-name ?varZ "z")
+                                       (pred/has "id" ?varZ ?ide)
+                                       (objects ?ide ?varzObj)))))
   (assert (= objectZ (first (l/run* [?varzObj]
                                     (props ?varzObj objectX)))))
   
   
   ;;; MAYHAVEPROP TESTS
-  (pred/parseCode "var x = { y : 123 };")
-  (doAnalysis)
+  ;;;;;;;;;;;;;;;;;;;;;
+  (proj/analyze "var x = { y : 123 };")
   (def objectX (first (l/run* [?objs]
-                              (l/fresh [?node]
-                                       (pred/ast-variabledeclarationwithname ?node "x")
-                                       (objects ?node ?objs)))))
+                              (l/fresh [?node ?ide]
+                                       (pred/variabledeclaration-name ?node "x")
+                                       (pred/has "id" ?node ?ide)
+                                       (objects ?ide ?objs)))))
   (assert (= false (first (l/run* [?v] (l/== ?v (mayHaveProp objectX "x"))))))
   (assert (= true (first (l/run* [?v] (l/== ?v (mayHaveProp objectX "y"))))))
-  (pred/parseCode "var x = {}; x.y = 123;")
-  (doAnalysis)
+
+  (proj/analyze "var x = {}; x.y = 123;")
   (def newObjectX (first (l/run* [?objs]
-                                 (l/fresh [?node]
-                                          (pred/ast-variabledeclarationwithname ?node "x")
-                                          (objects ?node ?objs)))))
+                                 (l/fresh [?node ?ide]
+                                          (pred/variabledeclaration-name ?node "x")
+                                          (pred/has "id" ?node ?ide)
+                                          (objects ?ide ?objs)))))
   (assert (= false (first (l/run* [?v] (l/== ?v (mayHaveProp newObjectX "x"))))))
   (assert (= true (first (l/run* [?v] (l/== ?v (mayHaveProp newObjectX "y"))))))
   
   
   ;;; RET TESTS
-  (pred/parseCode "var x = function (y) { return y }; x(x);")
-  (doAnalysis)
+  (proj/analyze "var x = function (y) { return y }; x(x);")
   (def functionX (first (l/run* [?funcXaddr]
                                 (l/fresh [?funcX]
                                          (pred/functionexpression ?funcX)
@@ -118,16 +121,16 @@
   (assert (= functionX (first (l/run* [?funcXaddr]
                                       	(ret ?funcXaddr functionX)))))
   
-  (pred/parseCode "var z = {y : 5}; var x = function (y) { return y }; x(x); x(z);")
-  (doAnalysis)
+  (proj/analyze "var z = {y : 5}; var x = function (y) { return y }; x(x); x(z);")
   (def x (first (l/run* [?funcXaddr]
                         (l/fresh [?funcX]
                                  (pred/functionexpression ?funcX)
                                  (objects ?funcX ?funcXaddr)))))
   (def z (first (l/run* [?Zaddr]
-                        (l/fresh [?Z]
-                                 (pred/ast-variabledeclarationwithname ?Z "z")
-                                 (objects ?Z ?Zaddr)))))
+                        (l/fresh [?Z ?ide]
+                                 (pred/variabledeclaration-name ?Z "z")
+                                 (pred/has "id" ?Z ?ide)
+                                 (objects ?ide ?Zaddr)))))
   (assert (= x (first (l/run* [?returnAddr]
                               (ret x ?returnAddr)))))
   (assert (= z (second (l/run* [?returnAddr]
@@ -138,12 +141,12 @@
   
   ;;; ARG TESTS
   ;;;;;;;;;;;;;
-  (pred/parseCode "var x = function (y) { return y }; x(x);")
-  (doAnalysis)
+  (proj/analyze "var x = function (y) { return y }; x(x);")
   (def x (first (l/run* [?objs]
-                        (l/fresh [?node]
-                                 (pred/ast-variabledeclarationwithname ?node "x")
-                                 (objects ?node ?objs)))))
+                        (l/fresh [?node ?ide]
+                                 (pred/variabledeclaration-name ?node "x")
+                                 (pred/has "id" ?node ?ide)
+                                 (objects ?ide ?objs)))))
   (assert (= x (first (l/run* [?argaddr]
                               (l/fresh [?funcX ?funcXaddr]
                                        (pred/functionexpression ?funcX)
@@ -153,8 +156,7 @@
   (assert (= x (first (l/run* [?func] (l/fresh [?i] (arg ?func ?i x))))))
   (assert (= 1 (first (l/run* [?i] (l/fresh [?func] (arg ?func ?i x))))))
   
-  (pred/parseCode "var x = function (y, z) { return y }; x(x,x);")
-  (doAnalysis)
+  (proj/analyze "var x = function (y, z) { return y }; x(x,x);")
   (def x (first (l/run* [?objs]
                         (l/fresh [?node]
                                  (pred/functionexpression ?node)
@@ -173,21 +175,20 @@
   
   ;;; RECEIVER TESTS
   ;;;;;;;;;;;;;;;;;;
-  (pred/parseCode "var x = function (y) { return y }; x(x);")
-  (doAnalysis)
-  (def globala (.-globala @jsa))
-  (assert (= globala (first (l/run* [?receiveraddr]
-                                    (l/fresh [?funcY ?funcYaddr]
-                                             (pred/functionexpression ?funcY)
-                                             (objects ?funcY ?funcYaddr)
-                                             (receiver ?funcYaddr ?receiveraddr))))))
+  (proj/analyze "var x = function (y) { return y }; x(x);")
+  (assert (= (first (l/run* [?gl] (globala ?gl)))
+             (first (l/run* [?receiveraddr]
+                            (l/fresh [?funcY ?funcYaddr]
+                                     (pred/functionexpression ?funcY)
+                                     (objects ?funcY ?funcYaddr)
+                                     (receiver ?funcYaddr ?receiveraddr))))))
   
-  (pred/parseCode "var x = { y : function (z) { return z }}; x.y(x);")
-  (doAnalysis)
+  (proj/analyze "var x = { y : function (z) { return z }}; x.y(x);")
   (def varx (first (l/run* [?objs]
-                           (l/fresh [?node]
-                                    (pred/ast-variabledeclarationwithname ?node "x")
-                                    (objects ?node ?objs)))))
+                           (l/fresh [?node ?ide]
+                                    (pred/variabledeclaration-name ?node "x")
+                                    (pred/has "id" ?node ?ide)
+                                    (objects ?ide ?objs)))))
   (def funcY (first (l/run* [?funcYaddr]
                             (l/fresh [?funcY]
                                      (pred/functionexpression ?funcY)
@@ -198,12 +199,12 @@
   (assert (= funcY (first (l/run* [?funcaddr]
                                   (receiver ?funcaddr varx)))))
 
-  (pred/parseCode "var x = { y : function (z) { return z }};")
-  (doAnalysis)
+  (proj/analyze "var x = { y : function (z) { return z }};")
   (def varx (first (l/run* [?objs]
-                           (l/fresh [?node]
-                                    (pred/ast-variabledeclarationwithname ?node "x")
-                                    (objects ?node ?objs)))))
+                           (l/fresh [?node ?ide]
+                                    (pred/variabledeclaration-name ?node "x")
+                                    (pred/has "id" ?node ?ide)
+                                    (objects ?ide ?objs)))))
   (def funcY (first (l/run* [?funcYaddr]
                             (l/fresh [?funcY]
                                      (pred/functionexpression ?funcY)

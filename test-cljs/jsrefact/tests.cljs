@@ -1,10 +1,11 @@
 (ns jsrefact.tests
   (:require [jsrefact.tests.predicatestest :as pred]
   			[jsrefact.tests.analysistest :as analysis]
-  			[jsrefact.tests.refacttest :as refa]))
+        [jsrefact.misc :as misc]))
 
 (def success 0)
 
+(set! *print-fn* misc/js-print)
 
 (defn ^:export run []
   (println "Start all tests")

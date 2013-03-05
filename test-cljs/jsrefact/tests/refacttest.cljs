@@ -1,7 +1,7 @@
 (ns jsrefact.tests.refacttest
   	(:use-macros [cljs.core.logic.macros :only [run*]])
   	(:require-macros [cljs.core.logic.macros :as l])
-  	(:use [jsrefact.predicates :only [js-print esprimaParser ast-kind ast-property-value ast-property-set-value
+  	(:use [jsrefact.predicates :only [esprimaParser ast-kind ast-property-value ast-property-set-value
                                		ast-property ast-properties ast? program child parsed has progrm child+ ast ast-with-input]])
   )
 

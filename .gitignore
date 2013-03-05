@@ -13,3 +13,5 @@ pom.xml
 .lein-plugins
 jsrefact.js
 unittests.js
+TODO
+/notes

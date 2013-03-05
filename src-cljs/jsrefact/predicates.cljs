@@ -12,59 +12,14 @@
      [clojure.walk :only [walk]]
      [clojure.set :only [index]]
      [esp :only [esprima parse]])
-    (:require [jipdaast :as as])
+    (:require [jipdaast :as as]
+              [jsrefact.misc :as misc]
+              [jsrefact.project :as proj])
   	)
 
-; Debug print in the javascript console
-(defn 
-  js-print
-  "Print function to write to browser's console"
-  [arg]
-  (.log js/console arg))
+(set! *print-fn* misc/js-print)
 
-(defn
-  lprint
-  "Logical browser console print"
-  [?val]
-  (l/project [?val]
-    (l/== nil (js-print ?val))))
-
-(set! *print-fn* js-print)
-
-; Parsing Javascript using the Esprima parser
-; http://esprima.org/
-(def esprimaParser js/esprima)
-(def code (atom ""))
-(def parsed (atom (js/createAst @code)))
-(def progrm (atom (.-body @parsed)))
-
-(defn
-  parseCode
-  [paramcode]
-  (swap! code (fn [progrmCode] paramcode))
-  (swap! parsed (fn [parsedCode] (js/createAst @code)))
-  (swap! progrm (fn [parsedprogramCode] (.-body @parsed))))
-
-(parseCode "var x = 43")
-;(parseCode "var ar = []; for (var i = 0; i < 1000; i++){ar[i] = i;}; ar;")
-;(parseCode "var i = 0; var x = null; var patt='true'; function Inc(){i = i++}; function Dec(){i = i--}; Inc(); Dec(); Inc();" (js* "{ loc: true }"))
-;(parseCode "function add1(n){return n+1}; var i = 0; function inc(f, p){return f(p)}; inc(add1,i);" (js* "{ loc: true }"))
-;(parseCode "var k = true; var l = 0; var m = 'test'; var n = [1,2];" (js* "{ loc: true }"))
-
-
-
-
-; Regenerating Javascript code from AST trees from the esprima parser
-; https://github.com/Constellation/escodegen
-;(def escodegenGenerator js/escodegen)
-;(def versiontest (.-version escodegenGenerator))
-; (def generated (.generate escodegenGenerator
-;                           parsed
-;                           (js* "{format: {
-;                                     compact: true
-;                                     }
-;                            }")))
-
+;(proj/analyze "var x = 42;")
 
 (defn
   ast-property-value
@@ -84,14 +39,14 @@
 (defn
   ast-properties
   "Return a Seq of all properties of ast node using 
-    javacscripts Object.keys(ast) function"
+  javacscripts Object.keys(ast) function"
   [ast]
-  (def temp (seq (.keys js/Object ast)))
-  ; remove tag and toString properties from the list
-  ;  because they are not native properties from the
-  ;  ast. They are added by the JS parser used in JIPDA.
-  (def mintag (remove #{"tag"} temp))
-  (remove #{"toString"} mintag))
+  (let [temp (seq (.keys js/Object ast))
+        ; remove tag and toString properties from the list
+        ;  because they are not native properties from the
+        ;  ast. They are added by the JS parser used in JIPDA.
+        mintag (remove #{"tag"} temp)]
+    (remove #{"toString"} mintag)))
 
 (defn
   ast-kind
@@ -118,7 +73,7 @@
   [?node]
   (l/all 
     ; @program is Array of AST's
-    (membero ?node (seq @progrm))
+    (membero ?node (seq (proj/program)))
     ))
 
 ; Forward declaration of child+
@@ -126,60 +81,51 @@
 
 (defn
   ast
-  "Reification of the relation between an ast node ?node
-  and its kind ?kind
-  Uses program root"
-  [?kind ?node]
-  (l/fresh [?root]
-           (program ?root)
-           (l/conde
-             [(l/== ?root ?node)]
-             [(child+ ?root ?node)])
-           (l/project [?node]
-                      (l/== ?kind (ast-kind ?node)))))
+  "With 2 params: Reification of the relation between an ast node ?node
+  and its kind ?kind, uses program root.
+  With 3 params: Same as with two params but param ?nodeIn can be a subtree
+  of program root."
+  ([?kind ?node]
+    (l/fresh [?p]
+           (program ?p)
+           (ast ?kind ?p ?node)))
+  ([?kind ?nodeIn ?nodeOut]
+    (l/fresh [?root]
+      (l/conda [(l/lvaro ?nodeIn)
+               (l/fresh [?p] (program ?p)
+                        (l/== ?root ?p))]
+               [(l/== ?root ?nodeIn)])
+      (l/conde
+             [(l/== ?root ?nodeOut)]
+             [(child+ ?root ?nodeOut)])
+           (l/project [?nodeOut]
+                      (l/== ?kind (ast-kind ?nodeOut)))
+      )))
+
 
 (defn
   ast-property
-  "Reification of the relation between an ast node ?node
-  and its property ?prop
-  Uses program root"
-  [?prop ?node]
-  (l/fresh [?root]
-           (program ?root)
-           (l/conde
-             [(l/== ?root ?node)]
-             [(child+ ?root ?node)])
-           (l/project [?node]
-                      (membero ?prop (ast-properties ?node)))))
-
-(defn
-  ast-property-with-input
-  "Reification of the relation between an ast node ?node
-  and its property ?prop
-  Uses input as root node"
-  [?prop ?input ?node]
-  (l/fresh [?root]
-           (l/== ?root ?input)
-           (l/conde
-             [(l/== ?root ?node)]
-             [(child+ ?root ?node)])
-           (l/project [?node]
-                      (membero ?prop (ast-properties ?node)))))
-
-(defn
-  ast-with-input
-  "Reification of the relation between an ast node ?node
-    and its kind ?kind
-    Uses ?nodeIn as input AST"
-  [?kind ?nodeIn ?nodeOut]
-  (l/fresh [?root]
-    (l/== ?root ?nodeIn)
-    (l/conde
-      [(l/== ?root ?nodeOut)]
-      [(child+ ?root ?nodeOut)])
-    (l/project [?nodeOut]
-      (l/== ?kind (ast-kind ?nodeOut)))
-    ))
+  "With 2 params: Reification of the relation between an ast node ?node
+  and its property ?prop, uses program root.
+  With 3 params: Same as with two params but param ?input can be subtree
+  of program root"
+  ([?prop ?node]
+   (l/fresh [?p]
+            (program ?p)
+            (ast-property ?prop ?p ?node)))
+  ([?prop ?input ?node]
+   (l/fresh [?root]
+            (l/conda 
+              [(l/lvaro ?input)
+               (l/fresh [?p] (program ?p)
+                        (l/== ?root ?p))]
+              [(l/== ?root ?input)])
+            (l/conde
+              [(l/== ?root ?node)]
+              [(child+ ?root ?node)])
+            (l/project [?node]
+                       (membero ?prop (ast-properties ?node)))))
+  )
 
 
 (defn
@@ -233,215 +179,232 @@
 
 (defn
   thisexpression
-  "Reify ?exp with all the 'ThisExpression's from the ast"
+  "Reify ?exp with a 'ThisExpression' from the ast"
   [?this]
   (ast "ThisExpression" ?this))
 
 (defn
   objectexpression
-  "Reify ?exp with all the 'ObjectExpression's from the ast"
+  "Reify ?exp with an 'ObjectExpression' from the ast"
   [?object]
   (ast "ObjectExpression" ?object))
 
 (defn
   functiondeclaration
-  "Reify ?exp with all the 'FunctionDeclaration's from the ast"
+  "Reify ?exp with a 'FunctionDeclaration' from the ast"
   [?funct]
   (ast "FunctionDeclaration" ?funct))
 
 (defn
   expressionstatement
-  "Reify ?exp with all the 'ExpressionStatement's from the ast"
+  "Reify ?exp with an 'ExpressionStatement' from the ast"
   [?exp]
   (ast "ExpressionStatement" ?exp))
 
 (defn 
   functionexpression
-  "Reify ?exp with all the 'FunctionExpression's from the ast"
+  "Reify ?exp with a 'FunctionExpression' from the ast"
   [?exp]
   (ast "FunctionExpression" ?exp))
 
 (defn
   newexpression
-  "Reify ?exp with all the 'NewExpression's from the ast"
+  "Reify ?exp with a 'NewExpression' from the ast"
   [?exp]
   (ast "NewExpression" ?exp))
 
 (defn
-  ast-arrayexpression
-  "Reify ?arr with all arrayexpressions from input ?ast"
-  [?ast ?arr]
-  (ast-with-input "ArrayExpression" ?ast ?arr))
+  arrayexpression
+  "Reify ?exp with an 'ArrayExpression' from the ast"
+  [?exp]
+  (ast "ArrayExpression" ?exp))
 
 (defn
-  ast-literal
-  "Reify ?lit with all literals from input ?ast"
-  [?ast ?lit]
-  (ast-with-input "Literal" ?ast ?lit))
+  callexpression
+  "Reify ?exp with an 'CallExpression' from the ast"
+  [?exp]
+  (ast "CallExpression" ?exp))
 
 (defn
-  ast-value
-  "Reification of ?value with poperty 'value' of input ?ast"
+  memberexpression
+  "Reify ?exp with an 'MemberExpression' from the ast"
+  [?exp]
+  (ast "MemberExpression" ?exp))
+
+(defn
+  variabledeclarator
+  "Reify ?exp with an 'ArrayExpression' from the ast"
+  [?decl]
+  (ast "VariableDeclarator" ?decl))
+
+(defn
+  literal
+  "Reify ?lit with a 'Literal' from the ast"
+  [?lit]
+  (ast "Literal" ?lit))
+
+
+(defn
+  literal-value
+  "Reification of the relation between a literal ast ?ast and
+  its value ?value."
   [?ast ?value]
-  (l/project [?ast]
-             (l/== ?value (.-value ?ast))))
+  (all 
+    (literal ?ast)
+    (l/project [?ast]
+               (l/== ?value (.-value ?ast)))))
+;;; tests
+; (l/run* [?v] (l/fresh [?l] (literal-value ?l ?v))) 42
+; (l/run* [?l] (l/fresh [?v] (literal-value ?l ?v))) #<42>
+; (l/run* [?l] (literal-value ?l 42)) #<42>
+; (def xxx (first (l/run* [?l] (literal-value ?l 42)))) #<42>
+; (l/run* [?l] (literal-value xxx ?l)) 42
+
 
 (defn
   ast-name
+  "Reification of the relation between an ast ?ast and
+  its property name ?name."
   [?ast ?name]
-  (l/fresh [?p ?n]
-    (ast-property "name" ?n)
-    (l/project [?n]
-      (l/== ?name (ast-property-value ?n "name"))
-      (l/== ?n ?ast))))
+  (l/fresh [?kind]
+    (ast ?kind ?ast)
+    (has "name" ?ast ?name)))
 
-(defn
-  ast-name-with-input
-  ""
-  [?ast ?input ?name]
-  (l/fresh [?p ?n]
-    (ast-property-with-input "name" ?input ?n)
-    (l/project [?n]
-      (l/== ?name (ast-property-value ?n "name"))
-      (l/== ?n ?ast))))
-
-(defn
-  ast-variabledeclarationwithname
-  ""
-  [?ast ?name]
-  (l/conda
-    [(l/lvaro ?name)
-     (l/fresh [?x] (ast-name-with-input ?x ?ast ?name))]
-    [(l/lvaro ?ast)
-     (l/fresh [?vardec ?id]
-              (ast "VariableDeclarator" ?vardec)
-              (l/project [?vardec]
-                         (l/== ?id (ast-property-value ?vardec "id"))
-                         (l/project [?id]
-                                    (l/conde 
-                                      [(l/== ?name (ast-property-value ?id "name"))
-                                       (l/== ?ast ?id)]))))]))
-; TODO : add unit tests for ast-variabledeclarationwithname
-;(def temp (first (l/run* [?x] (ast-variabledeclarationwithname ?x "x"))))
-;(l/run* [?x] (ast-variabledeclarationwithname temp ?x)) ;result: "x"
-
+;;;tests
+; (l/run* [?n] (ast-name ?n "x"))  (#<x>)
+; (l/run* [?n] (ast-name ?n "y")) (#<y>)
+; (l/run* [?n] (l/fresh [?x] (ast-name ?n ?x)))  (#<x> #<y>)
+; (l/run* [?x] (l/fresh [?n] (ast-name ?n ?x)))  ("x" "y")
+; (def namex (first (l/run* [?n] (l/fresh [?x] (ast-name ?n ?x)))))
+; (l/run* [?n] (ast-name namex ?n)) ("x")
 
 
 (defn
-  function-name
-  "Reify ?funcname with the name property of functiondeclaration ?func
-    ?func is a FunctionDeclaration object"
-  [?func ?funcname]
-  (ast-name (.-id ?func) ?funcname))
+  variabledeclaration-name
+  "Reification of the relation between an variabledeclaration ?decl and
+  its name ?name."
+  [?decl ?name]
+  (l/fresh [?ide]
+    (variabledeclarator ?decl) 
+    (has "id" ?decl ?ide)
+    (has "name" ?ide ?name)))
+
+;;;tests
+;(l/run* [?name] (l/fresh [?d] (variabledeclaration-name ?d ?name)))  "x"
+; (l/run* [?d] (l/fresh [?name] (variabledeclaration-name ?d ?name))) #<x=42>
+; (def varx (first (l/run* [?d] (l/fresh [?name] (variabledeclaration-name ?d ?name)))))
+;(l/run* [?name] (variabledeclaration-name varx ?name))  "x"
+; (l/run* [?d] (variabledeclaration-name ?d "x")) == varx
+
 
 (defn
-  invocationcall
-  [?callee]
-  (l/fresh [?expressionstatement ?expression]
-           (expressionstatement ?expressionstatement)
-           (has "expression" ?expressionstatement ?expression)
-           (has "callee" ?expression ?callee)))
+  functiondeclaration-name
+  "Reification of the relation between a functiondeclaration ?decl and
+  its name ?name."
+  [?decl ?name]
+  (l/fresh [?id]
+    (functiondeclaration ?decl)
+    (has "id" ?decl ?id)
+    (has "name" ?id ?name)))
+
+;;; tests
+; (proj/analyze "function add1(n){return n+1}; function inc(f, p){return f(p)};")
+; (l/run* [?x] (l/fresh [?n] (functiondeclaration-name ?n ?x)))  "add1" "inc"
+; (l/run* [?n] (l/fresh [?x] (functiondeclaration-name ?n ?x)))  (#<function add1(n) {return n+1;};> #<function inc(f,p) {return f(p);};>)
+; (l/run* [?x] (functiondeclaration-name ?x "inc")) #<function inc(f,p) {return f(p);};>
+; (def xxx (first (l/run* [?n] (l/fresh [?x] (functiondeclaration-name ?n ?x)))))
+; (l/run* [?x] (functiondeclaration-name xxx ?x)) "add1"
+
+
+(defn 
+  callexpression-callee
+  "Reification of the relation between a callexpression and its
+   callee."
+  [?ca ?cal]
+  (l/all
+    (callexpression ?ca)
+    (has "callee" ?ca ?cal)))
+
+;tests
+; (proj/analyze "function add1(n){return n+1}; function inc(f, p){return f(p)}; add1(5)")
+; (l/run* [?x] (l/fresh [?n] (callexpression-callee ?n ?x))) (#<add1> #<f>)
+; (def xxx (first (l/run* [?x] (l/fresh [?n] (callexpression-callee ?n ?x)))))  #<add1>
+; (l/run* [?n] (callexpression-callee ?n xxx))  (#<add1(5)>)
+; (def yyy (second (l/run* [?n] (callexpression ?n)))) #<f(p)>
+; (l/run* [?n] (callexpression-callee yyy ?n))  (#<f>)
+
+; (proj/analyze "var a = function () {}; var x = {a : a}; a(); this.a(); x.a();")
+; (l/run* [?x] (l/fresh [?n] (callexpression-callee ?n ?x))) (#<a> #<this.a> #<x.a>)
+; (def aaa (first (l/run* [?n] (l/fresh [?x] (callexpression-callee ?n ?x))))) #<a()>
+; (l/run* [?x] (callexpression-callee aaa ?x)) (#<a>)
+
 
 (defn
-  function-invocation
-  [?func ?invocation]
-  (fresh [?funcName ?invoc ?invocName]
-         (function-name ?func ?funcName)
-         (invocationcall ?invoc)
-         (ast-name ?invoc ?invocName)
-         (l/== ?invocName ?funcName)
-         (l/== ?invocation ?invoc)))
+  callexpression-arguments
+  "Reification of the relation between a callexpression and 
+  its arguments."
+  [?callexpr ?arguments]
+  (l/fresh [?array]
+  (callexpression ?callexpr)
+  (has "arguments" ?callexpr ?array)
+  (l/project [?array] (l/== ?arguments (seq ?array)))))
 
-;; TODO : move to unit tests
-;(def one (second (l/run* [?n] (pred/functiondeclaration ?n))))
-; (l/run* 
-;   [?calls]
-;   (function-invocation one ?calls))
+;;; tests
+; (proj/analyze "var a = function (x, y, z) {}; a(1, 2, 3);")
+; (l/run* [?arg] (l/fresh [?n] (callexpression-arguments ?n ?arg)))  ((#<1> #<2> #<3>))
+; (def args (first (l/run* [?arg] (l/fresh [?n] (callexpression-arguments ?n ?arg)))))
+; (l/run* [?n] (callexpression-arguments ?n args)) (#<a(1,2,3)>)
+; (def callexpr (first (l/run* [?callexpr] (callexpression ?callexpr))))
+; (l/run* [?args] (callexpression-arguments callexpr ?args)) ((#<1> #<2> #<3>))
+
 
 (defn
-  ast-location
-  ""
-  [?ast ?startLine ?endLine ?startCol ?endCol]
-  ; location params oppsplitsten in 4
-  ; check for ast
-  (l/project [?ast]
-             ;(l/== true (ast? ?ast))
-             (l/fresh [?loc]
-                      (l/== ?loc (.-loc ?ast))
-                      (l/project [?loc]
-                                 (l/== ?startLine (.-line (.-start ?loc)))
-                                 (l/== ?endLine (.-line (.-end ?loc)))
-                                 (l/== ?startCol (.-column (.-start ?loc)))
-                                 (l/== ?endCol (.-column (.-end ?loc)))
-                                 ))))
+  callexpression-argument
+  "Reification of the relation between a callexpression and 
+  one of its arguments"
+  [?callexpr ?argument]
+  (l/fresh [?args]
+    (callexpression-arguments ?callexpr ?args)
+    (membero ?argument ?args)))
 
-;; TODO move to unittests
-;; Tests for AST location
-; (l/run* [?s] 
-;        (l/fresh [?p ?e ?cs ?ce]
-;                (program ?p)
-;                (ast-location ?p ?s ?e ?cs ?ce)))
-; (l/run* [?p] 
-;         (l/fresh [?e ?cs ?ce]
-;                (ast-location ?p 1 ?e ?cs ?ce)))
-; (l/run* [?s]
-;         (l/fresh [?p]
-;                (program ?p)
-;                (l/project [?p]
-;                           (l/== ?s (ast? ?p)))))
+;;; tests
+; (l/run* [?arg] (l/fresh [?n] (callexpression-argument ?n ?arg))) (#<1> #<2> #<3>)
+; (def firstarg (first (l/run* [?id] (literal ?id)))) #<1>
+; (l/run* [?n] (callexpression-argument ?n firstarg)) (#<a(1,2,3)>)
+; 
+
 
 (defn
-  ast-length
-  "Unify ?length with the length of ?ast"
-  [?ast ?length]
-  (l/fresh [?s ?e ?cs ?ce]
-           (ast-location ?ast ?s ?e ?cs ?ce)
-           (l/project [?e ?s]
-                      (l/== ?length (- ?e ?s -1)))))
+  functiondeclaration-callexpression
+  "Reification of the relation betweeen a functiondeclaration and
+  one of its callexpressions"
+  [?decl ?callexpr]
+  (l/fresh [?fname ?callee ?cname]
+    (functiondeclaration-name ?decl ?fname)
+    (callexpression-callee ?callexpr ?callee)
+    (has "name" ?callee ?cname)
+    (l/== ?fname ?cname)))
 
-;; TODO : move into unittests
-;; Test for AST-length
-; (l/run* [?length] 
-;         (l/fresh [?p]
-;                (program ?p)
-;                (ast-length ?p ?length)))
+;;; tests
+; (proj/analyze "function add1(n){return n+1}; add1(2);")
+; (l/run* [?f] (l/fresh [?c] (functiondeclaration-callexpression ?f ?c)))  (#<function add1(n) {return n+1;};>)
+; (l/run* [?c] (l/fresh [?f] (functiondeclaration-callexpression ?f ?c)))  (#<add1(2)>)
+; (proj/analyze "function add1(n){return n+1}; add1(2); add1(3);")
+; (def funcdecl (first (l/run* [?decl] (functiondeclaration ?decl))))  #<function add1(n) {return n+1;};>
+; (l/run* [?c] (functiondeclaration-callexpression funcdecl ?c))  (#<add1(2)> #<add1(3)>)
+; (def aCallExpr (first (l/run* [?exp] (callexpression ?exp))))
+; (l/run* [?d] (functiondeclaration-callexpression ?d aCallExpr)) funcdecl
+; (proj/analyze "function add1(n){return n+1}; add1(2); function b(n) {}; b(1)")
+; (def b (second (l/run* [?f] (l/fresh [?c] (functiondeclaration-callexpression ?f ?c))))) #<function b(n) {};>
+; (def bCall (first (l/run* [?c] (functiondeclaration-callexpression b ?c)))  (#<b(1)>)
+; (l/run* [?f] (functiondeclaration-callexpression ?f bCall)) b
 
-(defn
-  functionlength
-  ""
-  [?length]
-  (l/fresh [?f]
-           (functiondeclaration ?f)
-           (ast-length ?f ?length)))
-
-;; TODO : move to unit tests
-; (l/run* [?length] 
-;                (functionlength ?length))
-
-(defn
-  average-function-lengths
-  "Calculate average of all function lengths"
-  []
-  (let [lengths (l/run* [?length] (functionlength ?length))]
-    (/ (walk #(* 1 %) 
-             #(apply + %) 
-             lengths)
-       (count lengths))))
-
-;(def sec (second (l/run* [?p] (program ?p))))
-;(l/run* [?vals] (ast-location sec ?vals))
-;(l/run* [?vals] (function-lines ?vals))
-;(average-function-lengths)
-
-
-;(def z {})
-;(def z (conj z ["test" 2]))
 
 (defn 
   countTypes
-  "Return a hashmap with AST-type as key
+  "Return a hashmap with AST-types as key
     and a number how many times it appears"
   []
-  (let [entries (l/run* [?k] (l/fresh [?n] (pred/ast ?k ?n)))]
+  (let [entries (l/run* [?k] (l/fresh [?n] (ast ?k ?n)))]
      (into {} (frequencies entries))))
 ;(countTypes)
