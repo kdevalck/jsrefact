@@ -232,6 +232,24 @@
   (ast "MemberExpression" ?exp))
 
 (defn
+  objectexpression
+  "Reify ?exp with an 'ObjectExpression' from the ast"
+  [?exp]
+  (ast "ObjectExpression" ?exp))
+
+(defn
+  catchclause
+  "Reify ?clau with an 'CatchClause' from the ast"
+  [?clau]
+  (ast "CatchClause" ?clau))
+
+(defn
+  withstatement
+  "Reify ?with with a with statement from the ast"
+  [?with]
+  (ast "WithStatement" ?with))
+
+(defn
   variabledeclarator
   "Reify ?exp with an 'ArrayExpression' from the ast"
   [?decl]

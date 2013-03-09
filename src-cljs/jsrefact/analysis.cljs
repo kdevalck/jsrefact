@@ -3,7 +3,7 @@
             These queries are mainly based on the paper: Tool-supported
             Refactoring for Javascript by Asger Feldthaus."}
   (:use [esp :only [esprima parse]]
-    [cljs.core.logic :only [membero lvaro nonlvaro conda conso]])
+    [cljs.core.logic :only [membero lvaro nonlvaro conda conde conso]])
   (:require-macros [cljs.core.logic.macros :as l])
   (:require 
             [jsrefact.project :as proj]
@@ -29,34 +29,103 @@
                       (l/== ?glob (.-globala ?jsan)))))
 
 (defn
-  objects
+  objectaddress
+  [?addr]
+  (l/fresh [?address ?jsan ?glob]
+           (jsanalysis ?jsan)
+           (l/project [?jsan] 
+                      (l/== ?address (seq (.allObjects ?jsan)))
+                      (globala ?glob)
+                      (l/project [?glob ?address]
+                                 (membero ?addr (filter (fn [x] (false? (= ?glob x))) ?address))))))
+
+(defn
+  expression
+  "Reification of the relation between a kind of expression ?kind
+    and its expression ast ?exp."
+  [?kind ?exp]
+  (let [types 
+        ["ThisExpression"
+         "ArrayExpression"
+         "ObjectExpression"
+         "FunctionExpression"
+         "SequenceExpression"
+         "UnaryExpression"
+         "BinaryExpression"
+         "AssignmentExpression"
+         "UpdateExpression"
+         "LogicalExpression"
+         "ConditionalExpression"
+         "NewExpression"
+         "CallExpression"
+         "MemberExpression"
+         "YieldExpression"
+         "ComprehensionExpression"
+         "GeneratorExpression"
+         "LetExpression"]]
+         (l/all
+          (membero ?kind types)
+          (pred/ast ?kind ?exp))))
+
+(defn
+  expression-object
   "Reification of the relation between an expression ?node and 
   the set of objects ?objects it can evaluate to"
+
+  ; What objects should accept: any expression, any functiondeclaration (werkt, maar met id property)
+
   [?node ?objects]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
+           ;(l/conde 
+           ; [(expression ?node)]
+           ; [(functiondeclaration ?node)])
            (l/project [?node ?jsan]
                       (membero ?objects (seq (.objects ?jsan ?node))))))
 
+; (proj/analyze "var x = { y : function (z) { return z }};")
+; (l/run* [?k] (l/fresh [?n] (expression ?k ?n)))
+; (l/run* [?objs] (l/fresh [?exp] (pred/objectexpression ?exp) (objects ?exp ?objs)))  ==> cannot handle object expression
+; (l/run* [?objs] (l/fresh [?exp] (pred/functionexpression ?exp) (objects ?exp ?objs)))
 
 (defn
-  scope
-  "Reification of the relation between a functionExpression ?node
-  and its scope ?scope"
+  functiondefinition
+  "Reifies ?fdef with functiondefinition from ast.
+  Notice that a functiondefinition is either a functionExpression
+  or a functiondeclaration."
+  [?fdef]
+  (l/conde 
+    [(pred/functionexpression ?fdef)]
+    [(pred/functiondeclaration ?fdef)])
+  )
 
-  ;TODO : only works with functionExpressions not yet with functiondeclarations
-
+(defn
+  ast-scope
+  "Reification of the relation between a functiondefinition or catchclause
+  and its scope ?scope
+  Notice that a functiondefinition is either a functionExpression
+  or a functiondeclaration.
+  For every with-statement : (ast-scope withStatement ?scope) = (expression-object withStatement ?scope)"
   [?node ?scope]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-                       (pred/functionexpression ?node)
-                       (l/project [?node ?jsan]
-                                  (membero ?scope (seq (.scope ?jsan ?node)))))
-             )
+           (pred/functionexpression ?node) ;TODO: to be replaced with functiondefinition & catch clause (catchclause ?clau) & with-statement
+           (l/project [?node ?jsan]
+                      (membero ?scope (seq (.scope ?jsan ?node)))))
+  )
 
+;;; CATCH Clause
+; (proj/analyze "function x() {}; try { x(); } catch (error) { alert(error.message); }")
+; (l/run* [?d] (catchclause ?d))
+
+;;; WITH Statement (not yet supported in the analysis)
+; (proj/analyze "var x = { y : 123, z : 456}; with (x) { y = 234; };")
+
+;;; FUNCTIONDECLARATION
+; (proj/analyze "function add1(n){return n+1};")
 
 (defn
-  proto
+  object-proto
   "The reification of the relation between any object ?objectaddr 
   and its possible prototype objects, ?protoaddr, of the objects ?objectaddr can
   represent at runtime.
@@ -65,35 +134,26 @@
   [?objectaddr ?protoaddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/conda 
-             [(l/lvaro ?objectaddr)
-              (l/fresh [?anObject]
-                       (l/project [?jsan] (membero ?anObject (seq (.allObjects ?jsan)))
-                                  (l/project [?anObject]
-                                             (membero ?protoaddr (seq (.proto ?jsan ?anObject)))
-                                             (l/== ?objectaddr ?anObject))))]
-             [(l/lvaro ?protoaddr)
-              (l/project [?jsan ?objectaddr]
-                         (membero ?protoaddr (seq (.proto ?jsan ?objectaddr))))])
-           ))
+           (l/project [?jsan] 
+                      (objectaddress ?objectaddr)
+                      (l/project [?objectaddr]
+                                 (membero ?protoaddr (seq (.proto ?jsan ?objectaddr)))))))
 
 (defn
-    props
-    "Refication of the relation between any object ?obj and
-     the set of objects, ?props, that could be stored in the
-     properties of object ?obj.
-
-     param ?obj is an address representing an object
-     param ?prop is an address representing a property of ?obj"
-    [?obj ?prop]
-    (l/fresh [?jsan]
-        (jsanalysis ?jsan)
-        (l/project [?jsan]
-              (membero ?obj (rest (seq (.allObjects ?jsan))))
-              ; use rest to remove globala from list of objects.
-              (l/project [?obj]
-                (membero ?prop (seq (.props ?jsan ?obj))))))
-        )
+  object-propertyObject
+  "Refication of the relation between any object ?obj and
+  the set of objects, ?props, that could be stored in the
+  properties of object ?obj.
+  
+  param ?obj is an address representing an object
+  param ?prop is an address representing a property of ?obj"
+  [?obj ?prop]
+  (l/fresh [?jsan]
+           (jsanalysis ?jsan)
+           (l/project [?jsan]
+                      (objectaddress ?obj)
+                      (l/project [?obj]
+                                 (membero ?prop (seq (.props ?jsan ?obj)))))))
 
 (defn
     mayHaveProp
@@ -116,8 +176,8 @@
            (l/conda 
              [(l/lvaro ?i)
               (l/fresh [?func ?funcAddr ?argLength ?argNumb]
-                (pred/functionexpression ?func)
-                (objects ?func ?funcAddr)
+                (pred/functionexpression ?func)     ; functiondeclarations can be added using the has "id" trick
+                (expression-object ?func ?funcAddr)
                 (l/project [?func] (l/== ?argLength (.-length (.-params ?func))))
                 (l/project [?argLength] (membero ?argNumb (range 1 (+ ?argLength 1))))
                 (l/project [?jsan ?funcAddr ?argNumb] (membero ?argaddr (seq (.arg ?jsan ?funcAddr ?argNumb))))
@@ -131,27 +191,21 @@
 
 (defn
   receiver
-  "Reification of the relation between the functionExpression
-   and the receiver of it.
-
-  param ?objectaddr is an address of a functionExpression.
+  "Reification of the relation between a function
+  and the receiver of it.
+  
+  param ?objectaddr is an address of a functionexpression or functiondeclaration.
   param ?receiveraddr is the receiver address."
   [?objectaddr ?receiveraddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/conda
-             [(l/lvaro ?objectaddr)
-              (l/fresh [?func ?funcAddr]
-                       (pred/functionexpression ?func)
-                       (objects ?func ?funcAddr)
-                       (l/project [?jsan ?funcAddr]
-                          (membero ?receiveraddr (seq (.arg ?jsan ?funcAddr 0)))
-                          (l/== ?objectaddr ?funcAddr)))
-              ]
-             [(l/lvaro ?receiveraddr)
-              (l/project [?jsan ?objectaddr]
-                         (membero ?receiveraddr (seq (.arg ?jsan ?objectaddr 0))))
-              ])))
+           (l/fresh [?func ?decl]
+                    (l/conde 
+                      [(pred/functionexpression ?func)]
+                      [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?func)])
+                    (expression-object ?func ?objectaddr)
+                    (l/project [?jsan ?objectaddr]
+                               (membero ?receiveraddr (seq (.arg ?jsan ?objectaddr 0)))))))
 
 (defn
   ret
@@ -162,35 +216,28 @@
   [?objectaddr ?return]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/conda 
-             [(l/lvaro ?return)
-              (l/project [?jsan ?objectaddr]
-                         (membero ?return (seq (.ret ?jsan ?objectaddr))))]
-             [(l/lvaro ?objectaddr)
-              (l/fresh [?func ?funcAddr]
-                       (pred/functionexpression ?func)
-                       (objects ?func ?funcAddr)
-                       (l/project [?func ?jsan ?funcAddr]
-                                  (membero ?return (seq (.ret ?jsan ?funcAddr)))
-                                  (l/== ?objectaddr ?funcAddr)
-                                  ))]
-             )))
-
+           (l/fresh [?decl ?func]
+                    (l/conde 
+                      [(pred/functionexpression ?func)]
+                      [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?func)])
+                    (expression-object ?func ?objectaddr)
+                    (l/project [?jsan ?objectaddr]
+                               (membero ?return (seq (.ret ?jsan ?objectaddr)))))))
 
 
 
 ;;; TESTS
 ;; TODO: move tests in separate file
 
-;;; OBJECTS TESTS
+;;; expression-object TESTS
 ; (proj/analyze "var x = { foo: 42 };")
 ; (l/run* [?objs]
 ;         (l/fresh [?node]
 ;                  (pred/ast-variabledeclarationwithname ?node "x")
-;                  (objects ?node ?objs)))
+;                  (expression-object ?node ?objs)))
 ; (.isObject (.lookup (proj/jsa) (first (l/run* [?objs]
 ;                                                  (l/fresh [?node]
 ;                                                           (pred/ast-name ?node "x")
-;                                                           (objects ?node ?objs))))))
+;                                                           (expression-object ?node ?objs))))))
 ; (l/run* [?node] (pred/ast-name ?node "x"))
 

@@ -8,10 +8,11 @@
   	(:require-macros [cljs.core.logic.macros :as l]
                     [clojure.tools.macro :as mu])
   	(:use [clojure.walk :only [walk]])
-  	(:require [clojure.browser.repl :as repl]))
+  	(:require [clojure.browser.repl :as repl]
+      [jsrefact.analysis :as analysis]
+      [jsrefact.misc :as misc]
+      [jsrefact.project :as proj]))
 
 
 ;; browser connected REPL
 (repl/connect "http://localhost:9000/repl")
-
-
