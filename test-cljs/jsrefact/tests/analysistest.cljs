@@ -1,7 +1,7 @@
 (ns jsrefact.tests.analysistest
   (:use-macros [cljs.core.logic.macros :only [run*]])
   (:require-macros [cljs.core.logic.macros :as l])
-  (:use [jsrefact.analysis :only [jsanalysis globala ast-scope object-proto expression-object object-propertyObject mayHaveProp ret arg receiver]])
+  (:use [jsrefact.analysis :only [jsanalysis globala ast-scope object-proto expression-object object-propertyObject mayHaveProp function-return arg function-receiver]])
   (:require 
     [jsrefact.predicates :as pred]
     [jsrefact.project :as proj])
@@ -144,16 +144,16 @@
   (assert (= true (first (l/run* [?v] (l/== ?v (mayHaveProp newObjectX "y"))))))
   
   
-  ;;; RET TESTS
+  ;;; function-return TESTS
   (proj/analyze "var x = function (y) { return y }; x(x);")
   (def functionX (first (l/run* [?funcXaddr]
                                 (l/fresh [?funcX]
                                          (pred/functionexpression ?funcX)
                                          (expression-object ?funcX ?funcXaddr)))))
   (assert (= functionX (first (l/run* [?returnAddr]
-                                      (ret functionX ?returnAddr)))))
+                                      (function-return functionX ?returnAddr)))))
   (assert (= functionX (first (l/run* [?funcXaddr]
-                                      	(ret ?funcXaddr functionX)))))
+                                      	(function-return ?funcXaddr functionX)))))
   
   (proj/analyze "var z = {y : 5}; var x = function (y) { return y }; x(x); x(z);")
   (def x (first (l/run* [?funcXaddr]
@@ -166,17 +166,17 @@
                                  (pred/has "id" ?Z ?ide)
                                  (expression-object ?ide ?Zaddr)))))
   (assert (= x (first (l/run* [?returnAddr]
-                              (ret x ?returnAddr)))))
+                              (function-return x ?returnAddr)))))
   (assert (= z (second (l/run* [?returnAddr]
-                               (ret x ?returnAddr)))))
+                               (function-return x ?returnAddr)))))
   (assert (= x (first (l/run* [?funcXaddr]
-                              (ret ?funcXaddr x)))))
+                              (function-return ?funcXaddr x)))))
   
   (proj/analyze "function x(y) { return y }; x(x); var w = function (z) { return z }; w(w);")
-  (def returnAddresses (l/run* [?returnAddr] (l/fresh [?o] (ret ?o ?returnAddr))))
+  (def returnAddresses (l/run* [?returnAddr] (l/fresh [?o] (function-return ?o ?returnAddr))))
   (def functiondeclarReturn (first returnAddresses))
   (def functionexprReturn (second returnAddresses))
-  (assert (= returnAddresses (l/run* [?o] (l/fresh [?returnAddr] (ret ?o ?returnAddr)))))
+  (assert (= returnAddresses (l/run* [?o] (l/fresh [?returnAddr] (function-return ?o ?returnAddr)))))
   
   (assert (= functionexprReturn (first (l/run* [?objs] 
                                                (l/fresh [?expr] 
@@ -197,7 +197,7 @@
                    (l/fresh [?expr ?objs] 
                             (pred/functionexpression ?expr) 
                             (expression-object ?expr ?objs)
-                            (ret ?func ?objs)))))
+                            (function-return ?func ?objs)))))
 
 (assert (= (l/run* [?objs] 
                    (l/fresh [?expr ?ide] 
@@ -209,7 +209,7 @@
                             (pred/functiondeclaration ?expr) 
                             (pred/has "id" ?expr ?ide) 
                             (expression-object ?ide ?objs)
-                            (ret ?func ?objs)))))
+                            (function-return ?func ?objs)))))
 
   
   ;;; ARG TESTS
@@ -244,15 +244,34 @@
   (assert (= '(1 2) (l/run* [?i] (l/fresh [?func] (arg ?func ?i x)))))
   
   (assert (= '(1 2) (l/run* [?i] (arg x ?i x))))
+
+  (proj/analyze "var x = function (y, z) { return y }; x(x,x); function foo(y){return y}; foo(x)")
+
+  (def x (first (l/run* [?objs]
+                        (l/fresh [?node ?ide]
+                                 (pred/variabledeclaration-name ?node "x")
+                                 (pred/has "id" ?node ?ide)
+                                 (expression-object ?ide ?objs)))))
+
+(def foo (first (l/run* [?obj] 
+                        (l/fresh [?node ?id] 
+                                 (pred/functiondeclaration ?node) 
+                                 (pred/has "id" ?node ?id) 
+                                 (expression-object ?id ?obj)))))
+
+  (assert (= (list x x x) (l/run* [?y] (l/fresh [?i ?x] (arg ?x ?i ?y)))))
   
+  (assert (= (list 1 2 1) (l/run* [?i] (l/fresh [?y ?x] (arg ?x ?i ?y)))))
+
+  (assert (= (list x x foo) (l/run* [?x] (l/fresh [?y ?i] (arg ?x ?i ?y)))))
   
-  ;;; RECEIVER TESTS
+  ;;; function-receiver TESTS
   ;;;;;;;;;;;;;;;;;;
   (proj/analyze "var x = function (y) { return y }; x(x);")
   (assert (= (l/run* [?gl] (globala ?gl))
              (l/run* [?receiveraddr]
                      (l/fresh [?funcaddr]
-                              (receiver ?funcaddr ?receiveraddr)))))
+                              (function-receiver ?funcaddr ?receiveraddr)))))
   
   (proj/analyze "var x = { y : function (z) { return z }}; x.y(x);")
   (def varx (first (l/run* [?objs]
@@ -265,10 +284,10 @@
                                      (pred/functionexpression ?funcY)
                                      (expression-object ?funcY ?funcYaddr)))))
   (assert (= varx (first (l/run* [?receiveraddr]
-                                 (receiver funcY ?receiveraddr)))))
+                                 (function-receiver funcY ?receiveraddr)))))
   
   (assert (= funcY (first (l/run* [?funcaddr]
-                                  (receiver ?funcaddr varx)))))
+                                  (function-receiver ?funcaddr varx)))))
   
   (proj/analyze "var x = { y : function (z) { return z }};")
   (def varx (first (l/run* [?objs]
@@ -281,10 +300,10 @@
                                      (pred/functionexpression ?funcY)
                                      (expression-object ?funcY ?funcYaddr)))))
   (assert (= true (empty? (l/run* [?receiveraddr]
-                                  (receiver funcY ?receiveraddr)))))
+                                  (function-receiver funcY ?receiveraddr)))))
   
   (assert (= true (empty? (l/run* [?funcaddr]
-                                  (receiver ?funcaddr varx)))))
+                                  (function-receiver ?funcaddr varx)))))
 
   (proj/analyze "var x = { y : function (z) { return z }, a : function (b) {return b}}; x.y(x); x.a(x);")
   (def varx (first (l/run* [?objs]
@@ -293,7 +312,7 @@
                                     (pred/has "id" ?node ?ide)
                                     (expression-object ?ide ?objs)))))
   (assert (= 2 (count (l/run* [?funcaddr]
-                              (receiver ?funcaddr varx)))))
+                              (function-receiver ?funcaddr varx)))))
   (def funcs (l/run* [?funcYaddr]
                             (l/fresh [?funcY]
                                      (pred/functionexpression ?funcY)
@@ -301,9 +320,15 @@
   (def funcY (first funcs))
   (def funcA (second funcs))
   (assert (= funcY (first (l/run* [?funcaddr]
-                              (receiver ?funcaddr varx)))))
+                              (function-receiver ?funcaddr varx)))))
   (assert (= funcA (second (l/run* [?funcaddr]
-                              (receiver ?funcaddr varx)))))
+                              (function-receiver ?funcaddr varx)))))
+
+    (proj/analyze "function x (y) { return y }; x(x);")
+  (assert (= (l/run* [?gl] (globala ?gl))
+             (l/run* [?receiveraddr]
+                     (l/fresh [?funcaddr]
+                              (function-receiver ?funcaddr ?receiveraddr)))))
    
   (println "  Analysis predicates unit tests ended.")
   )

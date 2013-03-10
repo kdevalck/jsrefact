@@ -94,10 +94,10 @@
   Notice that a functiondefinition is either a functionExpression
   or a functiondeclaration."
   [?fdef]
-  (l/conde 
-    [(pred/functionexpression ?fdef)]
-    [(pred/functiondeclaration ?fdef)])
-  )
+  (l/fresh [?decl]
+           (l/conde 
+             [(pred/functionexpression ?fdef)]
+             [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?fdef)])))
 
 (defn
   ast-scope
@@ -166,32 +166,27 @@
 
 (defn
   arg
-  "param ?objectaddr is an address of a functionexpression
-  param ?i is the i-th argument passed to the object.
-  param ?argadd is the set of objects that may be passed as
-  ith argument to the function expression"
+  "param ?objectaddr is an address of a functiondefinition
+  param ?i is the i-th argument passed to the function.
+  param ?argaddr is one of the objects that may be passed as
+  ith argument to the functiondefinition"
   [?objectaddr ?i ?argaddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/conda 
-             [(l/lvaro ?i)
-              (l/fresh [?func ?funcAddr ?argLength ?argNumb]
-                (pred/functionexpression ?func)     ; functiondeclarations can be added using the has "id" trick
-                (expression-object ?func ?funcAddr)
-                (l/project [?func] (l/== ?argLength (.-length (.-params ?func))))
-                (l/project [?argLength] (membero ?argNumb (range 1 (+ ?argLength 1))))
-                (l/project [?jsan ?funcAddr ?argNumb] (membero ?argaddr (seq (.arg ?jsan ?funcAddr ?argNumb))))
-                (l/== ?objectaddr ?funcAddr)
-                (l/== ?i ?argNumb)
-                )
-              ]
-             [(l/lvaro ?argaddr)
-              (l/project [?jsan ?objectaddr ?i]
-                         (membero ?argaddr (seq (.arg ?jsan ?objectaddr ?i))))])))
+           (l/fresh [?func ?decl ?argLength]
+                    (l/conde 
+                      [(pred/functionexpression ?func)]
+                      [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?func)])
+                    (expression-object ?func ?objectaddr)
+                    (l/project [?func ?decl] (l/conda 
+                                               [(pred/functionexpression ?func)(l/== ?argLength (.-length (.-params ?func)))]
+                                               [(l/== ?argLength (.-length (.-params ?decl)))]))
+                    (l/project [?argLength] (membero ?i (range 1 (+ ?argLength 1))))
+                    (l/project [?jsan ?objectaddr ?i] (membero ?argaddr (seq (.arg ?jsan ?objectaddr ?i)))))))
 
 (defn
-  receiver
-  "Reification of the relation between a function
+  function-receiver
+  "Reification of the relation between a functiondefinition
   and the receiver of it.
   
   param ?objectaddr is an address of a functionexpression or functiondeclaration.
@@ -199,17 +194,15 @@
   [?objectaddr ?receiveraddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/fresh [?func ?decl]
-                    (l/conde 
-                      [(pred/functionexpression ?func)]
-                      [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?func)])
+           (l/fresh [?func]
+                    (functiondefinition ?func)
                     (expression-object ?func ?objectaddr)
                     (l/project [?jsan ?objectaddr]
                                (membero ?receiveraddr (seq (.arg ?jsan ?objectaddr 0)))))))
 
 (defn
-  ret
-  "param ?objectaddr is an address which points to a function
+  function-return
+  "param ?objectaddr is an address which points to a functiondefinition
   param ?return is an object that may be returned as result from
   the function. 
   "
