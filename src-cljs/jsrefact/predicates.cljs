@@ -271,12 +271,6 @@
     (literal ?ast)
     (l/project [?ast]
                (l/== ?value (.-value ?ast)))))
-;;; tests
-; (l/run* [?v] (l/fresh [?l] (literal-value ?l ?v))) 42
-; (l/run* [?l] (l/fresh [?v] (literal-value ?l ?v))) #<42>
-; (l/run* [?l] (literal-value ?l 42)) #<42>
-; (def xxx (first (l/run* [?l] (literal-value ?l 42)))) #<42>
-; (l/run* [?l] (literal-value xxx ?l)) 42
 
 
 (defn
@@ -287,14 +281,6 @@
   (l/fresh [?kind]
     (ast ?kind ?ast)
     (has "name" ?ast ?name)))
-
-;;;tests
-; (l/run* [?n] (ast-name ?n "x"))  (#<x>)
-; (l/run* [?n] (ast-name ?n "y")) (#<y>)
-; (l/run* [?n] (l/fresh [?x] (ast-name ?n ?x)))  (#<x> #<y>)
-; (l/run* [?x] (l/fresh [?n] (ast-name ?n ?x)))  ("x" "y")
-; (def namex (first (l/run* [?n] (l/fresh [?x] (ast-name ?n ?x)))))
-; (l/run* [?n] (ast-name namex ?n)) ("x")
 
 
 (defn
@@ -307,13 +293,6 @@
     (has "id" ?decl ?ide)
     (has "name" ?ide ?name)))
 
-;;;tests
-;(l/run* [?name] (l/fresh [?d] (variabledeclaration-name ?d ?name)))  "x"
-; (l/run* [?d] (l/fresh [?name] (variabledeclaration-name ?d ?name))) #<x=42>
-; (def varx (first (l/run* [?d] (l/fresh [?name] (variabledeclaration-name ?d ?name)))))
-;(l/run* [?name] (variabledeclaration-name varx ?name))  "x"
-; (l/run* [?d] (variabledeclaration-name ?d "x")) == varx
-
 
 (defn
   functiondeclaration-name
@@ -325,14 +304,6 @@
     (has "id" ?decl ?id)
     (has "name" ?id ?name)))
 
-;;; tests
-; (proj/analyze "function add1(n){return n+1}; function inc(f, p){return f(p)};")
-; (l/run* [?x] (l/fresh [?n] (functiondeclaration-name ?n ?x)))  "add1" "inc"
-; (l/run* [?n] (l/fresh [?x] (functiondeclaration-name ?n ?x)))  (#<function add1(n) {return n+1;};> #<function inc(f,p) {return f(p);};>)
-; (l/run* [?x] (functiondeclaration-name ?x "inc")) #<function inc(f,p) {return f(p);};>
-; (def xxx (first (l/run* [?n] (l/fresh [?x] (functiondeclaration-name ?n ?x)))))
-; (l/run* [?x] (functiondeclaration-name xxx ?x)) "add1"
-
 
 (defn 
   callexpression-callee
@@ -342,19 +313,6 @@
   (l/all
     (callexpression ?ca)
     (has "callee" ?ca ?cal)))
-
-;tests
-; (proj/analyze "function add1(n){return n+1}; function inc(f, p){return f(p)}; add1(5)")
-; (l/run* [?x] (l/fresh [?n] (callexpression-callee ?n ?x))) (#<add1> #<f>)
-; (def xxx (first (l/run* [?x] (l/fresh [?n] (callexpression-callee ?n ?x)))))  #<add1>
-; (l/run* [?n] (callexpression-callee ?n xxx))  (#<add1(5)>)
-; (def yyy (second (l/run* [?n] (callexpression ?n)))) #<f(p)>
-; (l/run* [?n] (callexpression-callee yyy ?n))  (#<f>)
-
-; (proj/analyze "var a = function () {}; var x = {a : a}; a(); this.a(); x.a();")
-; (l/run* [?x] (l/fresh [?n] (callexpression-callee ?n ?x))) (#<a> #<this.a> #<x.a>)
-; (def aaa (first (l/run* [?n] (l/fresh [?x] (callexpression-callee ?n ?x))))) #<a()>
-; (l/run* [?x] (callexpression-callee aaa ?x)) (#<a>)
 
 
 (defn
@@ -367,14 +325,6 @@
   (has "arguments" ?callexpr ?array)
   (l/project [?array] (l/== ?arguments (seq ?array)))))
 
-;;; tests
-; (proj/analyze "var a = function (x, y, z) {}; a(1, 2, 3);")
-; (l/run* [?arg] (l/fresh [?n] (callexpression-arguments ?n ?arg)))  ((#<1> #<2> #<3>))
-; (def args (first (l/run* [?arg] (l/fresh [?n] (callexpression-arguments ?n ?arg)))))
-; (l/run* [?n] (callexpression-arguments ?n args)) (#<a(1,2,3)>)
-; (def callexpr (first (l/run* [?callexpr] (callexpression ?callexpr))))
-; (l/run* [?args] (callexpression-arguments callexpr ?args)) ((#<1> #<2> #<3>))
-
 
 (defn
   callexpression-argument
@@ -385,37 +335,20 @@
     (callexpression-arguments ?callexpr ?args)
     (membero ?argument ?args)))
 
-;;; tests
-; (l/run* [?arg] (l/fresh [?n] (callexpression-argument ?n ?arg))) (#<1> #<2> #<3>)
-; (def firstarg (first (l/run* [?id] (literal ?id)))) #<1>
-; (l/run* [?n] (callexpression-argument ?n firstarg)) (#<a(1,2,3)>)
-; 
-
 
 (defn
-  functiondeclaration-callexpression
-  "Reification of the relation betweeen a functiondeclaration and
-  one of its callexpressions"
+  functiondefinition-callexpression
+  "Reification of the relation between a functiondefinition and
+  one of its callexpressions.
+  Functiondefinition is either an functiondeclaration or functionexpression."
   [?decl ?callexpr]
   (l/fresh [?fname ?callee ?cname]
-    (functiondeclaration-name ?decl ?fname)
+    (l/conde 
+      [(variabledeclaration-name ?decl ?fname)]
+      [(functiondeclaration-name ?decl ?fname)])
     (callexpression-callee ?callexpr ?callee)
     (has "name" ?callee ?cname)
     (l/== ?fname ?cname)))
-
-;;; tests
-; (proj/analyze "function add1(n){return n+1}; add1(2);")
-; (l/run* [?f] (l/fresh [?c] (functiondeclaration-callexpression ?f ?c)))  (#<function add1(n) {return n+1;};>)
-; (l/run* [?c] (l/fresh [?f] (functiondeclaration-callexpression ?f ?c)))  (#<add1(2)>)
-; (proj/analyze "function add1(n){return n+1}; add1(2); add1(3);")
-; (def funcdecl (first (l/run* [?decl] (functiondeclaration ?decl))))  #<function add1(n) {return n+1;};>
-; (l/run* [?c] (functiondeclaration-callexpression funcdecl ?c))  (#<add1(2)> #<add1(3)>)
-; (def aCallExpr (first (l/run* [?exp] (callexpression ?exp))))
-; (l/run* [?d] (functiondeclaration-callexpression ?d aCallExpr)) funcdecl
-; (proj/analyze "function add1(n){return n+1}; add1(2); function b(n) {}; b(1)")
-; (def b (second (l/run* [?f] (l/fresh [?c] (functiondeclaration-callexpression ?f ?c))))) #<function b(n) {};>
-; (def bCall (first (l/run* [?c] (functiondeclaration-callexpression b ?c)))  (#<b(1)>)
-; (l/run* [?f] (functiondeclaration-callexpression ?f bCall)) b
 
 
 (defn 
