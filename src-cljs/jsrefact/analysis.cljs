@@ -9,6 +9,23 @@
             [jsrefact.project :as proj]
             [jsrefact.predicates :as pred]
             [jsrefact.misc :as misc]
+            [common :as comm]
+            [lattice :as lat]
+            [toplattice :as tlat]
+            [setlattice :as slat]
+            [cplattice :as clat]
+            [jiaddress :as addr]
+            [timedefa :as tdefa]
+            [tagag :as tag]
+            [concreteag :as conc]
+            [benv.defaultBenv :as defb]
+            [jistate :as sta]
+            [jipdaast :as as]
+            [visited :as vis]
+            [concreteprinter :as concp]
+            [jipda :as ji]
+            [depend :as dep]
+            [transform :as tra]
             ))
 
 
@@ -100,6 +117,17 @@
              [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?fdef)])))
 
 (defn
+  scopenode
+  "Reification of a scopenode. Where a scopenode is either a functionexpression,
+  functiondeclaration or a catchclause."
+  [?exp]
+  (l/all
+    (l/conde 
+      [(pred/functionexpression ?exp)]
+      [(pred/catchclause ?exp)]
+      [(pred/functiondeclaration ?exp)])))
+
+(defn
   ast-scope
   "Reification of the relation between a functiondefinition or catchclause
   and its scope ?scope
@@ -109,20 +137,23 @@
   [?node ?scope]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (pred/functionexpression ?node) ;TODO: to be replaced with functiondefinition & catch clause (catchclause ?clau) & with-statement
+           (l/conde 
+             [(pred/functionexpression ?node)]
+             [(pred/functiondeclaration ?node)]
+             [(pred/catchclause ?node)]) ;TODO:  catch clause (catchclause ?clau)
            (l/project [?node ?jsan]
-                      (membero ?scope (seq (.scope ?jsan ?node)))))
-  )
+                      (membero ?scope (seq (.scope ?jsan ?node))))))
 
 ;;; CATCH Clause
 ; (proj/analyze "function x() {}; try { x(); } catch (error) { alert(error.message); }")
+;"try { throw 42 } catch (e) { e };"
+;"try { 123 } catch (e) { e };"
+;"try { throw 42 } catch (e) { 43 };"
 ; (l/run* [?d] (catchclause ?d))
 
-;;; WITH Statement (not yet supported in the analysis)
+;;; WITH Statement (not supported in the analysis)
 ; (proj/analyze "var x = { y : 123, z : 456}; with (x) { y = 234; };")
 
-;;; FUNCTIONDECLARATION
-; (proj/analyze "function add1(n){return n+1};")
 
 (defn
   object-proto

@@ -36,8 +36,20 @@
   (assert (= funcexpr (first (l/run* [?func]
                                      (ast-scope ?func aScope)))))
   
-  (proj/analyze "function add1(n){return n+1};")
-  ; TODO does not work with functiondeclarations yet.
+  (proj/analyze "function add1(n){return n+1}; add1(5);")
+  (def funcdecl (first (l/run* [?func] (pred/functiondeclaration ?func))))
+
+  (def aScope (first (l/run* [?sc] (ast-scope funcdecl ?sc))))
+
+  (assert (= (list funcdecl) (l/run* [?f] (ast-scope ?f aScope))))
+
+  (proj/analyze "var x = 5; function a(){return x}; a(); var b = function(){return x}; b();")
+  (def funcdecl (first (l/run* [?func] (pred/functiondeclaration ?func))))
+  (def funcexp (first (l/run* [?func] (pred/functionexpression ?func))))
+
+  (assert (= 2 (count (l/run* [?scope] (l/fresh [?func] (ast-scope ?func ?scope))))))
+  
+  (assert (= (list funcdecl funcexp) (l/run* [?f] (l/fresh [?s] (ast-scope ?f ?s)))))
   
   
   ;;; object-proto TESTS

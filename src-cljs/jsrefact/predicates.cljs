@@ -238,6 +238,12 @@
   (ast "ObjectExpression" ?exp))
 
 (defn
+  binaryexpression
+  "Reify ?exp with a 'BinaryExpression' from the ast"
+  [?exp]
+  (ast "BinaryExpression" ?exp))
+
+(defn
   catchclause
   "Reify ?clau with an 'CatchClause' from the ast"
   [?clau]
@@ -350,6 +356,24 @@
     (has "name" ?callee ?cname)
     (l/== ?fname ?cname)))
 
+(defn
+  invocation
+  "An invocation is either a function call (call expression) or
+  a new expression."
+  [?inv]
+  (l/conde 
+    [(callexpression ?inv)]
+    [(newexpression ?inv)]))
+
+(defn
+  memberexpression-object-property
+  "Refication of the relation between a memberexpression, its base object 
+  and its property that is being called."
+  [?memb ?base ?property]
+  (l/all
+  (memberexpression ?memb)
+  (has "object" ?memb ?base)
+  (has "property" ?memb ?property)))
 
 (defn 
   countTypes
