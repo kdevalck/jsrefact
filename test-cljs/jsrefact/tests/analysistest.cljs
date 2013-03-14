@@ -1,7 +1,7 @@
 (ns jsrefact.tests.analysistest
   (:use-macros [cljs.core.logic.macros :only [run*]])
   (:require-macros [cljs.core.logic.macros :as l])
-  (:use [jsrefact.analysis :only [jsanalysis globala ast-scope object-proto expression-object object-propertyObject mayHaveProp function-return arg function-receiver]])
+  (:use [jsrefact.analysis :only [jsanalysis globala ast-scope object-proto expression-object object-propertyObject mayHaveProp function-return function-i-argument function-receiver]])
   (:require 
     [jsrefact.predicates :as pred]
     [jsrefact.project :as proj])
@@ -224,7 +224,7 @@
                             (function-return ?func ?objs)))))
 
   
-  ;;; ARG TESTS
+  ;;; function-i-argument TESTS
   ;;;;;;;;;;;;;
   (proj/analyze "var x = function (y) { return y }; x(x);")
   (def x (first (l/run* [?objs]
@@ -236,10 +236,10 @@
                               (l/fresh [?funcX ?funcXaddr]
                                        (pred/functionexpression ?funcX)
                                        (expression-object ?funcX ?funcXaddr)
-                                       (arg ?funcXaddr 1 ?argaddr))))))
+                                       (function-i-argument ?funcXaddr 1 ?argaddr))))))
   
-  (assert (= x (first (l/run* [?func] (l/fresh [?i] (arg ?func ?i x))))))
-  (assert (= 1 (first (l/run* [?i] (l/fresh [?func] (arg ?func ?i x))))))
+  (assert (= x (first (l/run* [?func] (l/fresh [?i] (function-i-argument ?func ?i x))))))
+  (assert (= 1 (first (l/run* [?i] (l/fresh [?func] (function-i-argument ?func ?i x))))))
   
   (proj/analyze "var x = function (y, z) { return y }; x(x,x);")
   (def x (first (l/run* [?objs]
@@ -247,15 +247,15 @@
                                  (pred/functionexpression ?node)
                                  (expression-object ?node ?objs)))))
   (assert (= x (first (l/run* [?argaddr]
-                              (arg x 1 ?argaddr)))))
+                              (function-i-argument x 1 ?argaddr)))))
   (assert (= x (first (l/run* [?argaddr]
-                              (arg x 2 ?argaddr))))) 
+                              (function-i-argument x 2 ?argaddr))))) 
   
-  (assert (= 2 (count (l/run* [?func] (l/fresh [?i] (arg ?func ?i x))))))
+  (assert (= 2 (count (l/run* [?func] (l/fresh [?i] (function-i-argument ?func ?i x))))))
   
-  (assert (= '(1 2) (l/run* [?i] (l/fresh [?func] (arg ?func ?i x)))))
+  (assert (= '(1 2) (l/run* [?i] (l/fresh [?func] (function-i-argument ?func ?i x)))))
   
-  (assert (= '(1 2) (l/run* [?i] (arg x ?i x))))
+  (assert (= '(1 2) (l/run* [?i] (function-i-argument x ?i x))))
 
   (proj/analyze "var x = function (y, z) { return y }; x(x,x); function foo(y){return y}; foo(x)")
 
@@ -271,11 +271,11 @@
                                  (pred/has "id" ?node ?id) 
                                  (expression-object ?id ?obj)))))
 
-  (assert (= (list x x x) (l/run* [?y] (l/fresh [?i ?x] (arg ?x ?i ?y)))))
+  (assert (= (list x x x) (l/run* [?y] (l/fresh [?i ?x] (function-i-argument ?x ?i ?y)))))
   
-  (assert (= (list 1 2 1) (l/run* [?i] (l/fresh [?y ?x] (arg ?x ?i ?y)))))
+  (assert (= (list 1 2 1) (l/run* [?i] (l/fresh [?y ?x] (function-i-argument ?x ?i ?y)))))
 
-  (assert (= (list x x foo) (l/run* [?x] (l/fresh [?y ?i] (arg ?x ?i ?y)))))
+  (assert (= (list x x foo) (l/run* [?x] (l/fresh [?y ?i] (function-i-argument ?x ?i ?y)))))
   
   ;;; function-receiver TESTS
   ;;;;;;;;;;;;;;;;;;

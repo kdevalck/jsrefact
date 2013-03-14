@@ -244,6 +244,84 @@
   (ast "BinaryExpression" ?exp))
 
 (defn
+  unaryexpression
+  "Reify ?exp with a 'UnaryExpression' from the ast"
+  [?exp]
+  (ast "UnaryExpression" ?exp))
+
+(defn
+  updateexpression
+  "TODO"
+  [?exp]
+  (ast "UpdateExpression" ?exp))
+
+(defn
+  increment-operand
+  "TODO"
+  [?inc ?op]
+  (l/all
+    (updateexpression ?inc)
+    (has "operator" ?inc "++")
+    (has "argument" ?inc ?op)))
+
+(defn
+  decrement-operand
+  "TODO"
+  [?inc ?op]
+  (l/all
+    (updateexpression ?inc)
+    (has "operator" ?inc "--")
+    (has "argument" ?inc ?op)))
+
+(defn
+  assignmentexpression
+  "TODO"
+  [?exp]
+  (ast "AssignmentExpression" ?exp))
+
+(defn
+  assignment-left
+  "TODO"
+  [?exp ?left]
+  (l/all (assignmentexpression ?exp)
+         (has "left" ?exp ?left)))
+
+(defn
+  assignment-right
+  "TODO"
+  [?exp ?right]
+  (l/all (assignmentexpression ?exp)
+         (has "right" ?exp ?right)))
+
+(defn
+  expression
+  "Reification of the relation between a kind of expression ?kind
+  and its expression ast ?exp."
+  [?kind ?exp]
+  (let [types 
+        ["ThisExpression"
+         "ArrayExpression"
+         "ObjectExpression"
+         "FunctionExpression"
+         "SequenceExpression"
+         "UnaryExpression"
+         "BinaryExpression"
+         "AssignmentExpression"
+         "UpdateExpression"
+         "LogicalExpression"
+         "ConditionalExpression"
+         "NewExpression"
+         "CallExpression"
+         "MemberExpression"
+         "YieldExpression"
+         "ComprehensionExpression"
+         "GeneratorExpression"
+         "LetExpression"]]
+    (l/all
+      (membero ?kind types)
+      (ast ?kind ?exp))))
+
+(defn
   catchclause
   "Reify ?clau with an 'CatchClause' from the ast"
   [?clau]
@@ -311,6 +389,25 @@
     (has "name" ?id ?name)))
 
 
+(defn
+  functionexpression-name
+  "TODO"
+  [?exp ?name]
+  (l/fresh [?id ?decl]
+    (functionexpression ?exp)
+    (variabledeclarator ?decl)
+    (has "init" ?decl ?exp)
+    (has "id" ?decl ?id)
+    (has "name" ?id ?name)))
+
+(defn
+  functiondefinition-name
+  "TODO"
+  [?def ?name]
+  (l/conde 
+    [(functionexpression-name ?def ?name)]
+    [(functiondeclaration-name ?def ?name)]))
+
 (defn 
   callexpression-callee
   "Reification of the relation between a callexpression and its
@@ -356,24 +453,6 @@
     (has "name" ?callee ?cname)
     (l/== ?fname ?cname)))
 
-(defn
-  invocation
-  "An invocation is either a function call (call expression) or
-  a new expression."
-  [?inv]
-  (l/conde 
-    [(callexpression ?inv)]
-    [(newexpression ?inv)]))
-
-(defn
-  memberexpression-object-property
-  "Refication of the relation between a memberexpression, its base object 
-  and its property that is being called."
-  [?memb ?base ?property]
-  (l/all
-  (memberexpression ?memb)
-  (has "object" ?memb ?base)
-  (has "property" ?memb ?property)))
 
 (defn 
   countTypes
@@ -383,3 +462,98 @@
   (let [entries (l/run* [?k] (l/fresh [?n] (ast ?k ?n)))]
      (into {} (frequencies entries))))
 ;(countTypes)
+
+
+(defn
+  invocation
+  "Reification of ?inv with an invocation from the ast.
+  An invocation is either a function call (call expression) or
+  a new expression."
+  [?inv]
+  (l/conde 
+    [(callexpression ?inv)]
+    [(newexpression ?inv)]))
+
+
+(defn
+  memberexpression-object-property
+  "Refication of the relation between a memberexpression, its base object 
+  and its property that is being called."
+  [?memb ?base ?property]
+  (l/all
+    (memberexpression ?memb)
+    (has "object" ?memb ?base)
+    (has "property" ?memb ?property)))
+
+
+(defn
+  fixedpropertyexpression
+  "Reifies ?exp with a fixed property expression from the ast.
+  Property 'computed' of a memberexpression should be false."
+  [?exp]
+  (l/fresh [?value]
+    (memberexpression ?exp)
+    (has "computed" ?exp ?value)
+    (l/project [?value] (l/== false ?value))))
+
+
+(defn
+  dynamicpropertyexpression
+  "Reifies ?exp with a dynamic property expression from the ast.
+  Property 'computed' of a memberexpression should be true."
+  [?exp]
+  (l/fresh [?value]
+    (memberexpression ?exp)
+    (has "computed" ?exp ?value)
+    (l/project [?value] (l/== true ?value))))
+
+
+(defn
+  propertyexpression
+  "TODO"
+  [?exp]
+  (l/all 
+    (l/conde
+      [(fixedpropertyexpression ?exp)]
+      [(dynamicpropertyexpression ?exp)])))
+
+
+(def reserved ["break" "else" "new" "var" "case"
+               "finally" "return" "void" "catch" "for"
+               "switch" "while" "continue" "function" "this"
+               "with" "default" "if" "throw" "delete"
+               "in" "try" "do" "instanceof" "typeof"])
+
+
+(defn 
+  lvalue
+  "TODO"
+  [?exp]
+  (l/fresh [?kind ?assignment ?dec ?inc]
+           (expression ?kind ?exp)
+           (l/conde 
+             [(assignment-left ?assignment ?exp)]
+             [(decrement-operand ?dec ?exp)]
+             [(increment-operand ?inc ?exp)]
+             )))
+
+
+(defn
+  rvalue
+  "TODO"
+  [?exp]
+  (l/fresh [?kind ?left ?assignment]
+    (expression ?kind ?exp)
+    (assignment-left ?assignment ?left)
+    (l/project [?exp ?left]
+      (l/== false (= ?exp ?left)))
+    ))
+
+(defn
+  objectexpression-propertyinitializer
+  "TODO"
+  [?obj ?prop]
+  (l/fresh [?props]
+    (objectexpression ?obj)
+    (has "properties" ?obj ?props)
+    (l/project [?props] (membero ?prop (seq ?props)))))

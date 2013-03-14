@@ -6,7 +6,10 @@
                                      literal-value variabledeclaration-name callexpression
                                      functiondeclaration-name callexpression-callee callexpression-arguments
                                      callexpression-argument literal functiondeclaration 
-                                     functiondefinition-callexpression]])
+                                     functiondefinition-callexpression memberexpression-object-property
+                                     fixedpropertyexpression dynamicpropertyexpression functiondefinition-name
+                                     functionexpression-name functionexpression objectexpression-propertyinitializer
+                                     objectexpression]])
   (:require [jsrefact.project :as proj]))
 
 ;(parseCode "var x = 43")
@@ -235,7 +238,34 @@
   (assert (= (list incF) (l/run* [?x] (functiondeclaration-name ?x "inc"))))
   
   (assert (= "add1" (first (l/run* [?x] (functiondeclaration-name add1F ?x)))))
-  
+
+
+  ; functionexpression-name
+  (proj/analyze "function add1(n){return n+1}; var x = function () {}; var y = function () {};")
+
+  (assert (= 2 (count (l/run* [?n] (l/fresh [?x] (functionexpression-name ?x ?n))))))
+
+  (assert (= '("x" "y") (l/run* [?n] (l/fresh [?x] (functionexpression-name ?x ?n)))))
+
+(assert (=
+          (first (l/run* [?x] (functionexpression-name ?x "x")))
+          (first (l/run* [?x] (functionexpression ?x)))))
+
+  (def yy (second (l/run* [?y] (functionexpression ?y))))
+
+  (assert (= "y" (first (l/run* [?x] (functionexpression-name yy ?x)))))
+
+
+  ; functiondefinition-name
+
+  (assert (= 3 (count (l/run* [?n] (l/fresh [?x] (functiondefinition-name ?x ?n))))))
+
+  (assert (= (list "add1" "x" "y") (l/run* [?x] (l/fresh [?y] (functiondefinition-name ?y ?x)))))
+
+  (assert (= "y" (first (l/run* [?x] (functionexpression-name yy ?x)))))
+
+
+
   
   ;callexpression-callee
   (proj/analyze "function add1(n){return n+1}; function inc(f, p){return f(p)}; add1(5)")
@@ -304,6 +334,65 @@
 
   (assert (= (list b) (l/run* [?f] (functiondefinition-callexpression ?f bCall))))
 
+
+  ;memberexpression-object-predicate
+  (proj/analyze "var x = {a : 0}; x.a;")
+
+  (def memb (first (l/run* [?x] (l/fresh [?y ?z] (memberexpression-object-property ?x ?y ?z)))))
+
+  (def xxx (first (l/run* [?y] (l/fresh [?x ?z] (memberexpression-object-property ?x ?y ?z)))))
+
+  (assert (= (list memb (l/run* [?x] (l/fresh [?z] (memberexpression-object-property ?x xxx ?z))))))
+
+  (def aaa (first (l/run* [?z] (l/fresh [?x ?y] (memberexpression-object-property ?x ?y ?z)))))
+
+  (assert (= (list memb) (l/run* [?x] (l/fresh [?z] (memberexpression-object-property ?x ?z aaa)))))
+
+  (assert (= (list xxx) (l/run* [?z] (l/fresh [?x] (memberexpression-object-property ?x ?z aaa)))))
+
+  (proj/analyze "var x = {y : 5}; x['y'];")
+
+  (def memb (first (l/run* [?x] (l/fresh [?y ?z] (memberexpression-object-property ?x ?y ?z)))))
+
+  (def xxx (first (l/run* [?y] (l/fresh [?x ?z] (memberexpression-object-property ?x ?y ?z)))))
+
+  (assert (= (list memb (l/run* [?x] (l/fresh [?z] (memberexpression-object-property ?x xxx ?z))))))
+
+  (def yyy (first (l/run* [?z] (l/fresh [?x ?y] (memberexpression-object-property ?x ?y ?z)))))
+
+  (assert (= (list memb) (l/run* [?x] (l/fresh [?z] (memberexpression-object-property ?x ?z yyy)))))
+
+  (assert (= (list xxx) (l/run* [?z] (l/fresh [?x] (memberexpression-object-property ?x ?z yyy)))))
+
+
+  ;fixedpropertyexpression & dynamicpropertyexpression
+  (proj/analyze "var x = {y : 5}; x['y'];")
+
+  (assert (= 1 (count (l/run* [?x] (dynamicpropertyexpression ?x)))))
+
+  (assert (= 0 (count (l/run* [?x] (fixedpropertyexpression ?x)))))
+
+  (proj/analyze "var x = {a : 0}; x.a;")
+
+  (assert (= 0 (count (l/run* [?x] (dynamicpropertyexpression ?x)))))
+
+  (assert (= 1 (count (l/run* [?x] (fixedpropertyexpression ?x)))))
+
+
+  ; objectexpression-propertyinitializer
+  (proj/analyze "var a = {x: 5, y : 6}")
+
+  (def objectexp (first (l/run* [?x] (objectexpression ?x))))
+
+  (def propinitX (first (l/run* [?y] (l/fresh [?x] (objectexpression-propertyinitializer ?x ?y)))))
+
+  (def propinitY (second (l/run* [?y] (l/fresh [?x] (objectexpression-propertyinitializer ?x ?y)))))
+
+  (assert (= (list propinitX propinitY) (l/run* [?y] (objectexpression-propertyinitializer objectexp ?y))))
+
+  (assert (= (list objectexp) (l/run* [?x] (objectexpression-propertyinitializer ?x propinitX))))
+
+  (assert (= (list objectexp) (l/run* [?x] (objectexpression-propertyinitializer ?x propinitY))))
 
 
   (println "  AST predicates Unit tests finished."))

@@ -56,33 +56,7 @@
                       (l/project [?glob ?address]
                                  (membero ?addr (filter (fn [x] (false? (= ?glob x))) ?address))))))
 
-(defn
-  expression
-  "Reification of the relation between a kind of expression ?kind
-    and its expression ast ?exp."
-  [?kind ?exp]
-  (let [types 
-        ["ThisExpression"
-         "ArrayExpression"
-         "ObjectExpression"
-         "FunctionExpression"
-         "SequenceExpression"
-         "UnaryExpression"
-         "BinaryExpression"
-         "AssignmentExpression"
-         "UpdateExpression"
-         "LogicalExpression"
-         "ConditionalExpression"
-         "NewExpression"
-         "CallExpression"
-         "MemberExpression"
-         "YieldExpression"
-         "ComprehensionExpression"
-         "GeneratorExpression"
-         "LetExpression"]]
-         (l/all
-          (membero ?kind types)
-          (pred/ast ?kind ?exp))))
+
 
 (defn
   expression-object
@@ -95,13 +69,13 @@
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            ;(l/conde 
-           ; [(expression ?node)]
+           ; [(pred/expression ?node)]
            ; [(functiondeclaration ?node)])
            (l/project [?node ?jsan]
                       (membero ?objects (seq (.objects ?jsan ?node))))))
 
 ; (proj/analyze "var x = { y : function (z) { return z }};")
-; (l/run* [?k] (l/fresh [?n] (expression ?k ?n)))
+; (l/run* [?k] (l/fresh [?n] (pred/expression ?k ?n)))
 ; (l/run* [?objs] (l/fresh [?exp] (pred/objectexpression ?exp) (objects ?exp ?objs)))  ==> cannot handle object expression
 ; (l/run* [?objs] (l/fresh [?exp] (pred/functionexpression ?exp) (objects ?exp ?objs)))
 
@@ -137,18 +111,15 @@
   [?node ?scope]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/conde 
-             [(pred/functionexpression ?node)]
-             [(pred/functiondeclaration ?node)]
-             [(pred/catchclause ?node)]) ;TODO:  catch clause (catchclause ?clau)
+           (scopenode ?node)
            (l/project [?node ?jsan]
                       (membero ?scope (seq (.scope ?jsan ?node))))))
 
 ;;; CATCH Clause
 ; (proj/analyze "function x() {}; try { x(); } catch (error) { alert(error.message); }")
-;"try { throw 42 } catch (e) { e };"
-;"try { 123 } catch (e) { e };"
-;"try { throw 42 } catch (e) { 43 };"
+; (proj/analyze "try { throw 42 } catch (e) { e };")
+; (proj/analyze "try { 123 } catch (e) { e };")
+; (proj/analyze "try { throw 42 } catch (e) { 43 };")
 ; (l/run* [?d] (catchclause ?d))
 
 ;;; WITH Statement (not supported in the analysis)
@@ -196,7 +167,7 @@
     (.mayHaveProp (proj/jsa) obj prop))
 
 (defn
-  arg
+  function-i-argument
   "param ?objectaddr is an address of a functiondefinition
   param ?i is the i-th argument passed to the function.
   param ?argaddr is one of the objects that may be passed as
