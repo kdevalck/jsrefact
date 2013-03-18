@@ -250,14 +250,20 @@
   (ast "UnaryExpression" ?exp))
 
 (defn
+  identifier
+  "TODO: comm + test"
+  [?ide]
+  (ast "Identifier" ?ide))
+
+(defn
   updateexpression
-  "TODO"
+  "TODO: comm + test"
   [?exp]
   (ast "UpdateExpression" ?exp))
 
 (defn
   increment-operand
-  "TODO"
+  "TODO: comm + test"
   [?inc ?op]
   (l/all
     (updateexpression ?inc)
@@ -266,7 +272,7 @@
 
 (defn
   decrement-operand
-  "TODO"
+  "TODO: comm + test"
   [?inc ?op]
   (l/all
     (updateexpression ?inc)
@@ -275,20 +281,20 @@
 
 (defn
   assignmentexpression
-  "TODO"
+  "TODO: comm + test"
   [?exp]
   (ast "AssignmentExpression" ?exp))
 
 (defn
   assignment-left
-  "TODO"
+  "TODO: comm + test"
   [?exp ?left]
   (l/all (assignmentexpression ?exp)
          (has "left" ?exp ?left)))
 
 (defn
   assignment-right
-  "TODO"
+  "TODO: comm + test"
   [?exp ?right]
   (l/all (assignmentexpression ?exp)
          (has "right" ?exp ?right)))
