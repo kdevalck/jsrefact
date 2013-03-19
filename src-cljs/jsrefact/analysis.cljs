@@ -222,7 +222,7 @@
   (l/fresh [?oval]
     (address-ovalue ?objectaddr ?oval)
     (l/project [?objectaddr]
-      (l/== ?protochain (distinct (protochain ?objectaddr (list)))))))
+      (l/== ?protochain (cons ?objectaddr (distinct (protochain ?objectaddr (list))))))))
 
 ; (proj/analyze "function F() {}; var f = new F();")
 ; (def xxx (last (l/run* [?x] (l/fresh [?y] (address-ovalue ?x ?y)))))
@@ -282,15 +282,31 @@
     (oaddress-pname-paddress ?oaddress ?pname ?paddress)
     (avalue-cvalue ?pname ?pstring)))
 
-; TODO: write property+ : 
+
+(defn
+  oaddress-pname-pstring-paddress+
+  "Reification of the relation between ?oaddress, one of its 
+  Transitive version of oaddress-pname-pstring-paddress. It will search
+  up the prototypechain."
+  [?oaddress ?pname ?pstring ?paddress]
+  (l/fresh [?protos ?proto ?ovalue]
+    (objectaddress-ovalue ?oaddress ?ovalue)
+    (oaddress-protoaddress+ ?oaddress ?protos)
+    (membero ?proto ?protos)
+    (oaddress-pname-pstring-paddress ?proto ?pname ?pstring ?paddress)))
+
+; example : (proj/analyze "var x = {}; function F() {this.z = x}; var f = new F(); F.prototype.w = x")
+; newF : (l/run* [?x] (l/fresh [?y] (pred/newexpression ?y) (expression-address ?y ?x)))
+; varx :  (second (l/run* [?x] (l/fresh [?y] (address-ovalue ?x ?y))))
+;(l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "z" ?z))) => ?z is varx
 
 
 (defn
-  function-i-argument
+  functionaddress-i-argumentaddress
   "param ?objectaddr is an address of a functiondefinition
   param ?i is the i-th argument passed to the function.
-  param ?argaddr is one of the objects that may be passed as
-  ith argument to the functiondefinition"
+  param ?argaddr is the address of one of the objects that may be 
+  passed as ith argument to the functiondefinition."
   [?objectaddr ?i ?argaddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
@@ -307,35 +323,35 @@
 
 
 (defn
-  function-receiver
+  functionaddress-receiveraddress
   "Reification of the relation between a functiondefinition
-  and the receiver of it.
+  and one of the receivers of it.
   
-  param ?objectaddr is an address of a functionexpression or functiondeclaration.
+  param ?faddr is an address of a functionexpression or functiondeclaration.
   param ?receiveraddr is the receiver address."
-  [?objectaddr ?receiveraddr]
+  [?faddr ?receiveraddr]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/fresh [?func]
                     (functiondefinition ?func)
-                    (expression-address ?func ?objectaddr)
-                    (l/project [?jsan ?objectaddr]
-                               (membero ?receiveraddr (seq (.arg ?jsan ?objectaddr 0)))))))
+                    (expression-address ?func ?faddr)
+                    (l/project [?jsan ?faddr]
+                               (membero ?receiveraddr (seq (.arg ?jsan ?faddr 0)))))))
 
 
 (defn
-  function-return
-  "param ?objectaddr is an address which points to a functiondefinition
+  functionaddress-returnaddress
+  "Reification of the relation between a functiondefinition and one of its
+  objectaddresses it may return.
+  param ?faddr is an address which points to a functiondefinition
   param ?return is an object that may be returned as result from
   the function. 
   "
-  [?objectaddr ?return]
+  [?faddr ?return]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/fresh [?decl ?func]
-                    (l/conde 
-                      [(pred/functionexpression ?func)]
-                      [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?func)])
-                    (expression-address ?func ?objectaddr)
-                    (l/project [?jsan ?objectaddr]
-                               (membero ?return (seq (.ret ?jsan ?objectaddr)))))))
+                    (functiondefinition ?func)
+                    (expression-address ?func ?faddr)
+                    (l/project [?jsan ?faddr]
+                               (membero ?return (seq (.ret ?jsan ?faddr)))))))
