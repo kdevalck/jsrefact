@@ -1,6 +1,6 @@
 goog.provide('tagag');
 
-  var tagAg = {};
+    var tagAg = {};
 
   tagAg.object =
     function (node, time)

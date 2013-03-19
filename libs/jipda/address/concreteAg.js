@@ -1,6 +1,6 @@
 goog.provide('concreteag');
 
-  var concreteAg = { counter: 0};
+    var concreteAg = { counter: 0};
 
   concreteAg.object =
     function (node, time)

@@ -173,13 +173,13 @@ ResultState.prototype.returnsResult =
   {
     if (!this.result.join)
     {
-//      print("no join", this.result, this.result.constructor);
+      print("no join", this.result, this.result.constructor);
     }
     assertDefinedNotNull(value.join);
     this.result = this.result.join(value);
     this.store = this.store.join(store);
     return this;
-  };  
+  };
   
 function DepState()
 {
@@ -196,7 +196,7 @@ function stackApplications(stack)
     var elem = stack[i];
     if (elem instanceof Cont)
     {
-      applications = applications.concat(elem.applications);
+      applications = applications.concat(elem.marks.map(function (mark) {return mark.application}));
     }
   }
   return applications;
@@ -282,4 +282,3 @@ DepState.prototype.writtenVars =
     var vscs = cs.flatMap(this.writtenVars, this);
     return append(vsthis, vscs);
   };
-

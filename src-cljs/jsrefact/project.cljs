@@ -17,6 +17,7 @@
             [jipdaast :as as]
             [visited :as vis]
             [concreteprinter :as concp]
+            [jipdaeval :as jie]
             [jipda :as ji]
             [depend :as dep]
             [transform :as tra]

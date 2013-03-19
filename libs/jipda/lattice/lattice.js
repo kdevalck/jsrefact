@@ -222,4 +222,3 @@ identityLattice.join = function () { return this };
 identityLattice.compareTo = function () { return 0 };
 
 ///////////////////////////////////////////////////////
-

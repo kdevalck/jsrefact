@@ -560,7 +560,7 @@ function isReferenceIdentifier(n, ast)
   return false;
 }
 
-function enclosingBlock(node, ast) // not used
+function enclosingBlock(node, ast)
 {
 	var p = parent(node, ast);
 	while (p)
@@ -574,7 +574,7 @@ function enclosingBlock(node, ast) // not used
 	return false;
 }
 
-function enclosingFunction(node, ast) // not used
+function enclosingFunction(node, ast)
 {
 	var p = parent(node, ast);
 	while (p)
@@ -1120,4 +1120,3 @@ AstQuery.prototype.newExpressions =
   {
     return $$$(nodes(this.ns).filter(isNewExpression), this.ast);
   }
-

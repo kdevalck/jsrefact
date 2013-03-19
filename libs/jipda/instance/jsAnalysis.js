@@ -39,13 +39,13 @@ function JsAnalysis(ast)
     }
   
   AnalysisState.prototype.returns =
-    function (value, application)
+    function (value, callMark)
     {
       var rets = this.rets;
       value.addresses().forEach(
         function (address)
         {
-          rets = rets.updateSetEntry(application.tag, address);
+          rets = rets.updateSetEntry(callMark.application.tag, address);
         });
       this.rets = rets;
       return this;
@@ -61,14 +61,15 @@ function JsAnalysis(ast)
   this.ast = ast;
   this.primLattice = new LatN(1);
   var state = new AnalysisState();
-  var ipda = ipdaEval(this.ast, state, {lattice: this.primLattice, k:0, ag: tagAg});
-  this.lattice = ipda.lattice;
-  this.store = state.store;
+  var jipda = new Jipda({lattice: this.primLattice, k:0, ag: tagAg});
+  jipda.evalGlobal(ast, {state:state});
+  this.lattice = jipda.lattice;
+  this.store = jipda.globalStore.join(state.store);
   this.envs = state.envs;
   this.apps = state.apps;
   this.rets = state.rets;
   this.thss = state.thss;
-  this.globala = ipda.globala;
+  this.globala = jipda.globalObject;
 }
 
 JsAnalysis.prototype.lookup =
@@ -96,7 +97,7 @@ JsAnalysis.prototype.value =
 JsAnalysis.prototype.objects =
   function (node)
   {
-    if (isNewExpression(node) || isFunctionExpression(node))
+    if (isNewExpression(node) || isFunctionExpression(node) || isFunctionDeclaration(node))
     {
       var tag = node.tag;
       return this.store.entries.flatMap(
@@ -121,6 +122,17 @@ JsAnalysis.prototype.objects =
       return value.as
     }
     throw new Error("cannot handle value " + value);
+  }
+
+JsAnalysis.prototype.allObjects =
+  function (node)
+  {
+    return this.store.entries.flatMap(
+      function (entry)
+      {
+        var v = entry[1].aval;
+        return (v.isBenv && v.isObject()) ? [entry[0]] : [];
+      });
   }
 
 // TODO catch clauses

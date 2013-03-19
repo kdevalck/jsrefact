@@ -141,43 +141,60 @@ function DefaultBenv()
       return result;
     }
   
-  Benv.prototype.equals =
-    function (x)
+Benv.prototype.equals =
+  function (x)
+  {
+    if (this === x)
     {
-      return this.compareTo(x) === 0;
+      return true;
     }
-  
-  Benv.prototype.subsumes =
-    function (x)
+  //  if (!(x instanceof Benv))
+  //  {
+  //    return undefined; // TODO allow out-of-lattice comparisons???
+  //  }
+    if (!this.Class.setEquals(x.Class) 
+        || !this.parents.setEquals(x.parents) 
+        || !this.Prototype.equals(x.Prototype)
+        || !this.Call.setEquals(x.Call))
     {
-      if (this === x)
-      {
-        return true;
-      }
-      if (!this.Class.subsumes(x.Class) 
-          || !this.parents.subsumes(x.parents) 
-          || !this.Prototype.subsumes(x.Prototype)
-          || !this.Call.subsumes(x.Call))
+      return false;
+    }
+    for (var i = 0; i < this.frame.length; i++)
+    {
+      var thisEntry = this.frame[i];
+      var xas = x.lookup(thisEntry[0]).addresses;
+      if (!thisEntry[1].setEquals(xas))
       {
         return false;
       }
-      for (var i = 0; i < this.frame.length; i++)
-      {
-        var thisEntry = this.frame[i];
-        var xas = x.lookup(thisEntry[0]).addresses;
-        if (!thisEntry[1].subsumes(xas))
-        {
-          return false;
-        }
-      }
-      return true;
     }
-  
-  Benv.prototype.compareTo =
-    function (x)
+    for (var i = 0; i < x.frame.length; i++)
     {
-      return Lattice.subsumeComparison(this, x);
+      var xEntry = x.frame[i];
+      var thisas = this.lookup(xEntry[0]).addresses;
+      if (!xEntry[1].setEquals(thisas))
+      {
+        return false;
+      }
     }
+    return true;
+  }
+
+Benv.prototype.subsumes =
+  function (x)
+  {
+    return this.equals(x);
+  }
+
+Benv.prototype.compareTo =
+  function (x)
+  {
+    if (this.equals(x))
+    {
+      return 0;
+    }
+    return undefined;
+  }
   
   Benv.prototype.names = 
     function ()
@@ -216,7 +233,7 @@ function DefaultBenv()
     {
       var benv = new Benv(["Env"]); // TODO introduce constant? (need a classifier here because of joining)
       benv.parents = [parenta]; // no ECMA internal property exists for 'outer environment' (10.2)
-      benv.Prototype = BOT;
+      benv.Prototype = BOT; // should be BOT and not abst(null) for example (when merging with other non-env Benvs)
       return benv;    
     }
   

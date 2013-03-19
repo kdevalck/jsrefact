@@ -2,10 +2,10 @@ goog.provide('toplattice');
 
 function TopLattice()
 {
-	return (function ()
-	{
-		var module = Object.create(new Lattice());
-		
+  return (function ()
+  {
+    var module = Object.create(new Lattice());
+    
     var Top = Object.create(new LatticeValue()); 
     Top.join = function (other) { return this };
     Top.compareTo = function (other) { return other === Top ? 0 : 1};
@@ -196,18 +196,18 @@ function TopLattice()
         return Top;
       }
         
-		module.isFalse =
-			function (aval)
-			{
-		    return false; 
-			}
-			
+    module.isFalse =
+      function (aval)
+      {
+        return false; 
+      }
+      
     module.isTrue =
       function (aval)
       {
         return false;
       }
       
-		return module;
-	})();
+    return module;
+  })();
 }

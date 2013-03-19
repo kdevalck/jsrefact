@@ -23,6 +23,7 @@
             [jipdaast :as as]
             [visited :as vis]
             [concreteprinter :as concp]
+            [jipdaeval :as jie]
             [jipda :as ji]
             [depend :as dep]
             [transform :as tra]
@@ -199,7 +200,6 @@
            (jsanalysis ?jsan)
            (l/project [?jsan] 
                       (address-ovalue ?objectaddr ?oval)
-                      ;[(globala ?g) (oaddress-protoaddress ?g ?objectaddr)])
                       (l/project [?objectaddr]
                                  (membero ?protoaddr (seq (.proto ?jsan ?objectaddr)))))))
 
@@ -208,14 +208,11 @@
   protochain
   "TODO : doc + test"
   [objectaddress protolist]
-  ;(println objectaddress)
-  (if (= objectaddress (first (.proto (proj/jsa) (.-globala (proj/jsa)))))
-    protolist
     (let [proto (seq (.proto (proj/jsa) objectaddress))
           protos (cons protolist proto)]
-      (if (== proto (.proto (proj/jsa) (.-globala (proj/jsa))))
+      (if (== proto (list))
         protos
-        (flatten (cons protos (map (fn [x] (protochain x (list))) proto)))))))
+        (flatten (cons protos (map (fn [x] (protochain x (list))) proto))))))
 
 
 (defn
@@ -226,6 +223,11 @@
     (address-ovalue ?objectaddr ?oval)
     (l/project [?objectaddr]
       (l/== ?protochain (distinct (protochain ?objectaddr (list)))))))
+
+; (proj/analyze "function F() {}; var f = new F();")
+; (def xxx (last (l/run* [?x] (l/fresh [?y] (address-ovalue ?x ?y)))))
+; (l/run* [?protos] (oaddress-protoaddress+ xxx ?protos))
+; => (#<proto-483@[]> #<Object.prototype@0>)
 
 
 (defn

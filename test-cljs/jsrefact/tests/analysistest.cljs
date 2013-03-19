@@ -10,7 +10,7 @@
     [jsrefact.project :as proj])
   )
 
-
+ 
 (defn run []
   (println "  Analysis predicates unit tests started.")
   
@@ -157,9 +157,9 @@
                                        (pred/variabledeclaration-name ?varZ "z")
                                        (pred/has "id" ?varZ ?ide)
                                        (expression-address ?ide ?varzObj)))))
-  (assert (= (list objectZ objectZ) (l/run* [?x] (l/fresh [?y ?z] (oaddress-pname-paddress ?x ?z ?y)))))
+  (assert (= objectZ (first (l/run* [?x] (l/fresh [?y ?z] (oaddress-pname-paddress ?x ?z ?y))))))
 
-  (assert (= (list objectY objectX) (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-paddress ?x ?z ?y)))))
+  (assert (= objectY (first (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-paddress ?x ?z ?y))))))
 
   (assert (= (list objectY objectX) (l/run* [?y] (l/fresh [?z] (oaddress-pname-paddress objectZ ?z ?y)))))
 
@@ -261,7 +261,7 @@
   
   (assert (= x (first (l/run* [?func] (l/fresh [?i] (function-i-argument ?func ?i x))))))
   (assert (= 1 (first (l/run* [?i] (l/fresh [?func] (function-i-argument ?func ?i x))))))
-  
+
   (proj/analyze "var x = function (y, z) { return y }; x(x,x);")
   (def x (first (l/run* [?objs]
                         (l/fresh [?node]

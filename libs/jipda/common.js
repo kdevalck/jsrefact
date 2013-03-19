@@ -385,19 +385,57 @@ Array.prototype.combinations =
 			});
 	};
 
-Array.prototype.forAll =
-	function (predicate)
-	{
-		for (var i = 0; i < this.length; i++)
-		{
-			if (!(predicate(this[i])))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
+//Array.prototype.forAll =
+//	function (predicate)
+//	{
+//		for (var i = 0; i < this.length; i++)
+//		{
+//			if (!(predicate(this[i])))
+//			{
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
+
+
+var Arrays = {};
 	
+Arrays.indexOf =
+  function (x, arr, eq)
+  {
+    for (var i = 0; i < arr.length; i++)
+    {
+      if (eq(x, arr[i]))
+      {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+/**
+ * Returns new array.
+ */
+Arrays.member =
+  function (x, arr, eq)
+  {
+    return arr.slice(Arrays.indexOf(x, arr, eq));
+  }
+
+/**
+ * O(n^2)
+ */
+Arrays.deleteDuplicates =
+  function (arr, eq)
+  {
+    return arr.reduce(
+      function (acc, x)
+      {
+        return Arrays.indexOf(x, acc, eq) === -1 ? acc.concat([x]) : acc; 
+      }, []);
+  }
+
 String.prototype.startsWith =
 	function (s)
 	{
@@ -448,9 +486,7 @@ function cons(x, l)
 
 
 // debug
-function d(value) { 
-	//print(Array.prototype.slice.call(arguments)); 
-	return value; }
+function d(value) { print(Array.prototype.slice.call(arguments)); return value; }
 function dreadline() { var str = readline(); if (str === ":b") { throw new Error(":b"); }}
 
 // assertions

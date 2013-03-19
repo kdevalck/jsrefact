@@ -2,51 +2,51 @@ goog.provide('cplattice');
 
 function CpLattice()
 {
-	return (function ()
-	{
-		var module = Object.create(Lattice.prototype);
-		
-		function Some(cvalue)
-		{
-			this.cvalue = cvalue;
-		}
-		Some.prototype = Object.create(LatticeValue.prototype);
+  return (function ()
+  {
+    var module = Object.create(Lattice.prototype);
+    
+    function Some(cvalue)
+    {
+      this.cvalue = cvalue;
+    }
+    Some.prototype = Object.create(LatticeValue.prototype);
 
-		Some.prototype.compareTo =
-		  function (x)
-		  {
-		    if (x === Top)
-		    {
-		      return -1;
-		    }
-		    
-		    if (!x)
-		    {
-		      return undefined;
-		    }
-		    
-        return Eq.equals(this.cvalue, x.cvalue) ? 0 : undefined;		      
-		  };
-			
-		Some.prototype.toString =
-			function (printer)
-			{
-		    if (printer)
-		    {
-	        return printer(this.cvalue);		      
-		    }
-		    return String(this.cvalue);
-			};
-			
-		Some.prototype.join =
-			function (aval)
-			{
-				if (aval === BOT)
-				{
-					return this;
-				}
-				return Top;
-			};
+    Some.prototype.compareTo =
+      function (x)
+      {
+        if (x === Top)
+        {
+          return -1;
+        }
+        
+        if (!x)
+        {
+          return undefined;
+        }
+        
+        return Eq.equals(this.cvalue, x.cvalue) ? 0 : undefined;          
+      };
+      
+    Some.prototype.toString =
+      function (printer)
+      {
+        if (printer)
+        {
+          return printer(this.cvalue);          
+        }
+        return String(this.cvalue);
+      };
+      
+    Some.prototype.join =
+      function (aval)
+      {
+        if (aval === BOT)
+        {
+          return this;
+        }
+        return this.equals(aval) ? this : Top;
+      };
 
     Some.prototype.conc =
       function ()
@@ -172,6 +172,20 @@ function CpLattice()
             return Top;
           }
           return new Some(x.cvalue / y.cvalue);                  
+        }
+        
+      module.rem =
+        function (x, y)
+        {
+          if (x === BOT || y === BOT)
+          {
+            return BOT;
+          }
+          if (x === Top || y === Top) 
+          {
+            return Top;
+          }
+          return new Some(x.cvalue % y.cvalue);                  
         }
         
       module.eqq =
@@ -404,18 +418,18 @@ function CpLattice()
         return new Some(cvalue);
       }
         
-		module.isFalse =
-			function (aval)
-			{
-				return aval.cvalue === false;
-			}
-			
+    module.isFalse =
+      function (aval)
+      {
+        return aval.cvalue === false;
+      }
+      
     module.isTrue =
       function (aval)
       {
         return aval.cvalue === true;
       }
       
-		return module;
-	})();
+    return module;
+  })();
 }

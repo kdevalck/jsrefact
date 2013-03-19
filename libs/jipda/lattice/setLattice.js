@@ -2,72 +2,72 @@ goog.provide('setlattice');
 
 function LatN(n)
 {
-	return (function ()
-	{
-		var module = Object.create(new Lattice());
-		
-		function Some(cvalues)
-		{
-			this.cvalues = cvalues;
-			//this.lattice = module;
-		}
-		Some.prototype = new LatticeValue();
+  return (function ()
+  {
+    var module = Object.create(new Lattice());
+    
+    function Some(cvalues)
+    {
+      this.cvalues = cvalues;
+      //this.lattice = module;
+    }
+    Some.prototype = new LatticeValue();
 
-		Some.prototype.compareTo =
-		  function (x)
-		  {
-		    if (x === Top)
-		    {
-		      return -1;
-		    }
-		    
-		    if (!x || !x.cvalues)
-		    {
-//		      throw new Error("cannot compare " + this + " with " + x);
-		      return undefined; // when comparing values on stack, not sure whether types match
-		    }
-		    
-		    var c = this.cvalues.length - x.cvalues.length;
+    Some.prototype.compareTo =
+      function (x)
+      {
+        if (x === Top)
+        {
+          return -1;
+        }
+        
+        if (!x || !x.cvalues)
+        {
+//          throw new Error("cannot compare " + this + " with " + x);
+          return undefined; // when comparing values on stack, not sure whether types match
+        }
+        
+        var c = this.cvalues.length - x.cvalues.length;
 
-		    // undefined works great: undefined <= 0 === false; false <= 0 === true
-		    if (c > 0)
-		    {
-		      return this.cvalues.subsumes(x.cvalues) ? c : undefined;
-		    }
-		    else
-		    {
-          return x.cvalues.subsumes(this.cvalues) ? c : undefined;		      
-		    }
-		  };
-			
-		Some.prototype.toString =
-			function (printer)
-			{
-		    if (printer)
-		    {
-	        return "{" + this.cvalues.map(printer).join(",") + "}";		      
-		    }
-		    return "{" + this.cvalues.join(",") + "}";
-			};
-			
-		Some.prototype.join =
-			function (aval)
-			{
-				if (aval === BOT)
-				{
-					return this;
-				}
-				if (aval === Top)
-				{
-					return Top;
-				}
-				var cvalues = this.cvalues.concat(aval.cvalues).toSet();
-				if (cvalues.length > n)
-				{
-					return Top;
-				}
-				return new Some(cvalues);
-			};
+        // undefined works great: undefined <= 0 === false; false <= 0 === true
+        if (c > 0)
+        {
+          return this.cvalues.subsumes(x.cvalues) ? c : undefined;
+        }
+        else
+        {
+          return x.cvalues.subsumes(this.cvalues) ? c : undefined;          
+        }
+      };
+      
+    Some.prototype.toString =
+      function (printer)
+      {
+        if (printer)
+        {
+          return "{" + this.cvalues.map(printer).join(",") + "}";         
+        }
+        return "{" + this.cvalues.join(",") + "}";
+      };
+      
+    Some.prototype.join =
+      function (aval)
+      {
+        if (aval === BOT)
+        {
+          return this;
+        }
+        if (aval === Top)
+        {
+          return Top;
+        }
+        var cvalues = this.cvalues.concat(aval.cvalues).toSet();
+        if (cvalues.length > n)
+        {
+          return Top;
+        }
+        return new Some(cvalues);
+      };
 
     Some.prototype.conc =
       function ()
@@ -86,7 +86,7 @@ function LatN(n)
 //      {
 //        return this.addresses().length === this.cvalues.length;
 //      }
-	        
+          
     Some.prototype.ToString =
       function ()
       {
@@ -211,6 +211,23 @@ function LatN(n)
           var right = y.conc();
           var combs = [left, right].combinations();
           return module.abst(combs.flatMap(function (p) { return p[0] / p[1]}));
+        }
+        
+      module.rem =
+        function (x, y)
+        {
+          if (x === BOT || y === BOT)
+          {
+            return BOT;
+          }
+          if (x === Top || y === Top) 
+          {
+            return Top;
+          }
+          var left = x.conc();
+          var right = y.conc();
+          var combs = [left, right].combinations();
+          return module.abst(combs.flatMap(function (p) { return p[0] % p[1]}));
         }
         
       module.eqq =
@@ -480,17 +497,17 @@ function LatN(n)
         return new Some([cvalue]);
       }
         
-		module.isFalse =
-			function (aval)
-			{
-				var cvalues = aval.conc();
-				if (!cvalues)
-				{
-					return false; 
-				}
-				return [false].equals(cvalues);
-			};
-			
+    module.isFalse =
+      function (aval)
+      {
+        var cvalues = aval.conc();
+        if (!cvalues)
+        {
+          return false; 
+        }
+        return [false].equals(cvalues);
+      };
+      
     module.isTrue =
       function (aval)
       {
@@ -510,6 +527,6 @@ function LatN(n)
 //      return module.abst(vals.map(rator));                  
 //    } 
       
-		return module;
-	})();
+    return module;
+  })();
 }
