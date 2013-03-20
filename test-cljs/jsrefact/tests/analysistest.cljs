@@ -4,7 +4,8 @@
   (:use [jsrefact.analysis :only [jsanalysis globala ast-scope oaddress-protoaddress expression-address
                                   object-propertyObject mayHaveProp functionaddress-returnaddress 
                                   functionaddress-i-argumentaddress functionaddress-receiveraddress oaddress-pname-paddress
-                                  oaddress-pname-pstring-paddress]])
+                                  oaddress-pname-pstring-paddress address-ovalue address-fvalue address-value
+                                  oaddress-protoaddress+ oaddress-pname-pstring-paddress+]])
   (:require 
     [jsrefact.predicates :as pred]
     [jsrefact.project :as proj])
@@ -49,8 +50,30 @@
   (assert (last addresses) (second addresses))
 
 
+  ;;; address-value TESTS
+  ;;;;;;;;;;;;;;;;;;;;;;;
+  (proj/analyze "var x = {};")
+  (def varX (first  (l/run* [?varxObj] 
+                     (l/fresh [?varX ?ide]
+                              (pred/variabledeclaration-name ?varX "x")
+                              (pred/has "id" ?varX ?ide)
+                              (expression-address ?ide ?varxObj)))))
+  (assert (= varX (first (l/run* [?x] (l/fresh [?y] (address-value ?x ?y))))))
 
-  
+  ;;; address-ovalue TESTS
+  ;;;;;;;;;;;;;;;;;;;;;;;;
+  (assert (= varX (first (l/run* [?x] (l/fresh [?y] (address-ovalue ?x ?y))))))
+
+  ;;; address-fvalue TEST
+  ;;;;;;;;;;;;;;;;;;;;;;;
+  (proj/analyze "var x = {}; function z(){}")
+  (def varX (first  (l/run* [?varxObj] 
+                     (l/fresh [?varX ?ide]
+                              (pred/variabledeclaration-name ?varX "x")
+                              (pred/has "id" ?varX ?ide)
+                              (expression-address ?ide ?varxObj)))))
+  (assert (= (list) (l/run* [?x] (address-fvalue varX ?x))))
+
 
   ;;; ast-scope TESTS
   ;;;;;;;;;;;;;;;
@@ -113,9 +136,27 @@
                                  (expression-address ?varf ?varfObj)
                                  (oaddress-protoaddress ?varfObj ?protoaddr)))))
   
+
+  ;;; oaddress-protoaddress+ TESTS
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (proj/analyze "function F() {}; var f = new F();")
+  (def varF (first (l/run* [?varxObj] 
+                           (l/fresh [?varX ?ide]
+                                    (pred/variabledeclaration-name ?varX "f")
+                                    (pred/has "id" ?varX ?ide)
+                                    (expression-address ?ide ?varxObj)))))
+  (def protos (first (l/run* [?protos] (oaddress-protoaddress+ varF ?protos))))
+  (def protoF (first (l/run* [?proto] (oaddress-protoaddress varF ?proto))))
+
+  (assert (= 3 (count protos)))
+
+  (assert (= (second protos) protoF))
+
+  (assert (= (nth protos 2) (first (l/run* [?proto] (oaddress-protoaddress protoF ?proto)))))
+
   
   ;;; oaddress-pname-paddress & oaddress-pname-pstring-paddress TESTS
-  ;;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (proj/analyze "var x = {}; var z = { p : x };")
   (def objectX (first (l/run* [?varxObj]
                               (l/fresh [?varX ?ide]
@@ -175,9 +216,30 @@
 
   (assert (= true (empty? (l/run* [?y] (l/fresh [?z ?x] (oaddress-pname-pstring-paddress ?x ?z "nothere" ?y))))))
 
-  
+
+  ;;; oaddress-pname-pstring-paddress+ TESTS
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (proj/analyze "var x = {}; function F() {this.z = x}; var f = new F(); F.prototype.w = x")
+  (def newF (first (l/run* [?x] (l/fresh [?y] (pred/newexpression ?y) (expression-address ?y ?x)))))
+  (def varX (first (l/run* [?xaddr]
+                        (l/fresh [?x ?ide]
+                                 (pred/variabledeclaration-name ?x "x")
+                                 (pred/has "id" ?x ?ide)
+                                 (expression-address ?ide ?xaddr)))))
+  (assert (= varX (first (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "z" ?z))))))
+
+  (assert (= varX (first (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "w" ?z))))))
+
+  (assert (empty? (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "q" ?z)))))
+
+  (assert (= "z" (first (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-pstring-paddress+ newF ?x ?y ?z))))))
+
+  (assert (= "w" (second (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-pstring-paddress+ newF ?x ?y ?z))))))
+
 
   ;;; functionaddress-returnaddress TESTS
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (proj/analyze "var x = function (y) { return y }; x(x);")
   (def functionX (first (l/run* [?funcXaddr]
                                 (l/fresh [?funcX]

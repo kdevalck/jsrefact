@@ -73,7 +73,6 @@
   the set of objects ?objects it can evaluate to"
   ; TODO: add and test referenceidentifier
   ; newexpression, functionexpression, ~referenceidentifier
-
   [?node ?objects]
   (l/fresh [?jsan ?n ?decl]
            (jsanalysis ?jsan)
@@ -120,7 +119,6 @@
 
 (defn 
   address-ovalue
-  ;TODO : add tests
   "Reification of the relation between an address and 
   ?ovalue : a binding environment from an object."
   [?address ?ovalue]
@@ -146,7 +144,6 @@
 
 (defn 
   address-fvalue
-  ;TODO : add tests
   "?fvalue : a binding environment from a function."
   [?address ?value]
   (l/all 
@@ -169,7 +166,7 @@
 
 (defn
   ast-scope
-  "Reification of the relation between a functiondefinition or catchclause
+  "Reification of the relation between a functiondefinition (or catchclause)
   and its scope ?scope
   Notice that a functiondefinition is either a functionExpression
   or a functiondeclaration."
@@ -180,21 +177,14 @@
            (l/project [?node ?jsan]
                       (membero ?scope (seq (.scope ?jsan ?node))))))
 
-;;; CATCH Clause
-; (proj/analyze "function x() {}; try { x(); } catch (error) { alert(error.message); }")
-; (proj/analyze "try { throw 42 } catch (e) { e };")
-; (proj/analyze "try { 123 } catch (e) { e };")
-; (proj/analyze "try { throw 42 } catch (e) { 43 };")
-; (l/run* [?d] (catchclause ?d))
-
 
 (defn
   oaddress-protoaddress
   "The reification of the relation between any object ?objectaddr 
-  and its possible prototype objects, ?protoaddr, of the objects ?objectaddr can
-  represent at runtime.
+  and its possible prototype object, ?protoaddr, at runtime.
   
-  param ?objectaddr is an address representing an object."
+  param ?objectaddr is an address representing an object.
+  param ?protoaddr is an address representing a prototype object."
   [?objectaddr ?protoaddr]
   (l/fresh [?jsan ?oval ?g]
            (jsanalysis ?jsan)
@@ -206,7 +196,9 @@
 
 (defn
   protochain
-  "TODO : doc + test"
+  "Non-relational
+  Given an objectaddress, protochain will construct the chain
+  of prototype objects starting from objectaddress"
   [objectaddress protolist]
     (let [proto (seq (.proto (proj/jsa) objectaddress))
           protos (cons protolist proto)]
@@ -217,22 +209,17 @@
 
 (defn
   oaddress-protoaddress+
-  "TODO : doc + test"
+  "Transitive version of oaddress-protoaddress. 
+  Reification of the relation between an objectaddress and its prototypechain."
   [?objectaddr ?protochain]
   (l/fresh [?oval]
     (address-ovalue ?objectaddr ?oval)
     (l/project [?objectaddr]
       (l/== ?protochain (cons ?objectaddr (distinct (protochain ?objectaddr (list))))))))
 
-; (proj/analyze "function F() {}; var f = new F();")
-; (def xxx (last (l/run* [?x] (l/fresh [?y] (address-ovalue ?x ?y)))))
-; (l/run* [?protos] (oaddress-protoaddress+ xxx ?protos))
-; => (#<proto-483@[]> #<Object.prototype@0>)
-
 
 (defn
   oaddress-pname-paddress
-  ; TODO: write test cases
   "Reification of the relation between an object address, one of its
   property addresses and its abstract property name.
 
@@ -254,7 +241,6 @@
 
 (defn
   avalue-cvalue
-  ; TODO write test cases
   "Conversion from abstract value to concrete value.
   abstract value should be bound"
   ; TODO: (.conc ?avalue) can return false
@@ -267,10 +253,8 @@
              ;   [(l/project [?cvalue] (membero ?cvalue (seq (.conc ?avalue))) (misc/lprint ?cvalue))])))
 
 
-
 (defn 
   oaddress-pname-pstring-paddress
-  ; TODO; write test cases
   "Reification of the relation between ?oaddress, one of its properties
   addresses ?paddress, the abstractname of the property and its concrete name ?pstring.
   ?oaddr : an object address.
@@ -294,11 +278,6 @@
     (oaddress-protoaddress+ ?oaddress ?protos)
     (membero ?proto ?protos)
     (oaddress-pname-pstring-paddress ?proto ?pname ?pstring ?paddress)))
-
-; example : (proj/analyze "var x = {}; function F() {this.z = x}; var f = new F(); F.prototype.w = x")
-; newF : (l/run* [?x] (l/fresh [?y] (pred/newexpression ?y) (expression-address ?y ?x)))
-; varx :  (second (l/run* [?x] (l/fresh [?y] (address-ovalue ?x ?y))))
-;(l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "z" ?z))) => ?z is varx
 
 
 (defn
