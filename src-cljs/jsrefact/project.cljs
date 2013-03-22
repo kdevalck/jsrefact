@@ -1,7 +1,9 @@
 (ns jsrefact.project
 	^{:doc "jsrefact.project support parsing and analyzation of Javascript
 	code by using the Esprima parser and JIPDA analysis. "}
-	(:use [esp :only [esprima parse]])
+	(:use 
+		[esp :only [esprima parse]]
+		[esco :only [escodegen generate]])
 	(:require 
             [common :as comm]
             [lattice :as lat]
@@ -42,6 +44,13 @@
 	(let [parsed (get @data :parsed)
 		analysis (new js/JsAnalysis parsed)]
 		(swap! data (fn [x] (assoc @data :jsa analysis)))))
+
+(defn
+	recreateCode
+	""
+	[]
+	(let [ast (get @data :parsed)]
+		(swap! data (fn [x] (assoc @data :code (.generate js/escodegen ast))))))
 
 (defn
 	analyze
