@@ -1,16 +1,16 @@
 (defproject jsrefact "0.0.1"
-  :plugins [[lein-cljsbuild "0.2.9"]]
-  :dependencies [[org.clojure/clojure "1.4.0"]
+  :plugins [[lein-cljsbuild "0.3.0"]]
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.macro "0.1.1"]
-                 [org.clojure/core.logic "0.8.0-beta2"]
-		 [org.clojure/core.match "0.2.0-alpha9"]]
-  :source-path "src"
+                 [org.clojure/core.logic "0.8.3"]
+		         [org.clojure/core.match "0.2.0-alpha12"]]
+  :source-paths ["src-cljs"]
   :cljsbuild {
     :builds {
 
         :dev
         {; The path to the top-level ClojureScript source directory:
-          :source-path "src-cljs"
+          :source-paths ["src-cljs"]
           ; The standard ClojureScript compiler options:
           :compiler {
             :output-to "jsrefact.js"  
@@ -43,7 +43,7 @@
         }
         :test
         {
-          :source-path "test-cljs"
+          :source-paths ["test-cljs"]
           :compiler {
             :optimizations :whitespace
             :output-to "unittests.js"

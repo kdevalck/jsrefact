@@ -322,7 +322,7 @@
   (proj/analyze "function add1(n){return n+1}; add1(2); add1(3);")
   (def funcdecl (first (l/run* [?decl] (functiondeclaration ?decl))))
 
-  (assert (= (count (l/run* [?c] (functiondefinition-callexpression funcdecl ?c)))))  ;(#<add1(2)> #<add1(3)>)
+  (assert (= 2 (count (l/run* [?c] (functiondefinition-callexpression funcdecl ?c)))))  ;(#<add1(2)> #<add1(3)>)
 
   (def aCallExpr (first (l/run* [?exp] (callexpression ?exp))))
 
@@ -335,7 +335,7 @@
   (assert (= (list b) (l/run* [?f] (functiondefinition-callexpression ?f bCall))))
 
 
-  ;memberexpression-object-predicate
+  ;memberexpression-object-property
   (proj/analyze "var x = {a : 0}; x.a;")
 
   (def memb (first (l/run* [?x] (l/fresh [?y ?z] (memberexpression-object-property ?x ?y ?z)))))

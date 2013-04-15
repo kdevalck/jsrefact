@@ -4,7 +4,9 @@
   	(:refer-clojure :exclude [==])
   	(:use-macros
      		[cljs.core.logic.macros
-        		:only [run run* == conde conda condu fresh defne matche all project trace-lvars log]])
+        		:only [run run* == conde conda condu fresh defne matche all project trace-lvars log]]
+        [jsrefact.macros.logic :only [equals succeeds fails projectlvars]]
+        [jsrefact.macros.jsr :only [jsr]])
   	(:require-macros [cljs.core.logic.macros :as l]
                     [clojure.tools.macro :as mu])
   	(:use
@@ -27,14 +29,6 @@
     from the ast"
   [ast property]
   (aget ast property))
-
-(defn
-  ast-property-set-value
-  "Set the value of the specified property
-    int the ast"
-  [ast property value]
-  (aset ast property value)
-  ast)
 
 (defn
   ast-properties
@@ -139,11 +133,9 @@
   [?property ?node ?value]
   (l/fresh [?kind ?properties]
     ;(ast ?kind ?node)
-    (l/project [?node]
-      (l/== ?properties (ast-properties ?node)))
+    (equals ?properties (ast-properties ?node))
     (membero ?property ?properties)
-    (l/project [?property ?node]
-      (l/== ?value (ast-property-value ?node ?property)))
+    (equals ?value (ast-property-value ?node ?property))
     ))
 
 
@@ -256,6 +248,14 @@
   (ast "Identifier" ?ide))
 
 (defn
+  identifier-name
+  ""
+  [?ide ?name]
+  (l/all 
+    (identifier ?ide)
+    (has "name" ?ide ?name)))
+
+(defn
   updateexpression
   "TODO: comm + test"
   [?exp]
@@ -359,8 +359,7 @@
   [?ast ?value]
   (all 
     (literal ?ast)
-    (l/project [?ast]
-               (l/== ?value (.-value ?ast)))))
+    (equals ?value (.-value ?ast))))
 
 
 (defn
@@ -432,7 +431,7 @@
   (l/fresh [?array]
   (callexpression ?callexpr)
   (has "arguments" ?callexpr ?array)
-  (l/project [?array] (l/== ?arguments (seq ?array)))))
+  (equals ?arguments (seq ?array))))
 
 
 (defn
@@ -453,7 +452,7 @@
   [?decl ?callexpr]
   (l/fresh [?fname ?callee ?cname]
     (l/conde 
-      [(variabledeclaration-name ?decl ?fname)]
+      [(functionexpression-name ?decl ?fname)]
       [(functiondeclaration-name ?decl ?fname)])
     (callexpression-callee ?callexpr ?callee)
     (has "name" ?callee ?cname)
@@ -500,7 +499,7 @@
   (l/fresh [?value]
     (memberexpression ?exp)
     (has "computed" ?exp ?value)
-    (l/project [?value] (l/== false ?value))))
+    (fails ?value)))
 
 
 (defn
@@ -511,7 +510,7 @@
   (l/fresh [?value]
     (memberexpression ?exp)
     (has "computed" ?exp ?value)
-    (l/project [?value] (l/== true ?value))))
+    (succeeds ?value)))
 
 
 (defn
@@ -551,9 +550,8 @@
   (l/fresh [?kind ?left ?assignment]
     (expression ?kind ?exp)
     (assignment-left ?assignment ?left)
-    (l/project [?exp ?left]
-      (l/== false (= ?exp ?left)))
-    ))
+    (fails (= ?exp ?left)))
+    )
 
 (defn
   objectexpression-propertyinitializer
@@ -562,4 +560,4 @@
   (l/fresh [?props]
     (objectexpression ?obj)
     (has "properties" ?obj ?props)
-    (l/project [?props] (membero ?prop (seq ?props)))))
+    (projectlvars (membero ?prop (seq ?props)))))

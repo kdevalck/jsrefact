@@ -10,11 +10,11 @@
     [jsrefact.predicates :as pred]
     [jsrefact.project :as proj])
   )
-
  
+
 (defn run []
   (println "  Analysis predicates unit tests started.")
-
+ 
   ;;; analysis TESTS
   ;;;;;;;;;;;;;;;;;;
   (proj/analyze "var x = 42")
@@ -45,11 +45,11 @@
              (first (l/run* [?n] (l/fresh [?x] (expression-address ?x ?n))))))
 
   (proj/analyze "function F() {}; var f = new F();")
-  (assert (= 3 (count (l/run* [?x] (l/fresh [?n] (expression-address ?x ?n))))))
+  (assert (= 3 (count (l/run* [?x] (l/fresh [?n] (expression-address ?x ?n))))));-
   (def addresses (l/run* [?n] (l/fresh [?x] (expression-address ?x ?n))))
   (assert (last addresses) (second addresses))
 
-
+ 
   ;;; address-value TESTS
   ;;;;;;;;;;;;;;;;;;;;;;;
   (proj/analyze "var x = {};")
@@ -122,7 +122,7 @@
                                                (pred/variabledeclaration-name ?varf "f")
                                                (pred/has "id" ?varf ?ide)
                                                (expression-address ?ide ?varfObj)
-                                               (oaddress-protoaddress ?varfObj ?protoaddr))))))
+                                               (oaddress-protoaddress ?varfObj ?protoaddr))))));-
   (def newFAddress (first (l/run* [?varfObj]
                                   (l/fresh [?varf]
                                            (pred/newexpression ?varf)
@@ -227,15 +227,15 @@
                                  (pred/variabledeclaration-name ?x "x")
                                  (pred/has "id" ?x ?ide)
                                  (expression-address ?ide ?xaddr)))))
-  (assert (= varX (first (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "z" ?z))))))
+  (assert (= varX (first (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "z" ?z))))));-
 
-  (assert (= varX (first (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "w" ?z))))))
+  (assert (= varX (first (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "w" ?z))))));-
 
   (assert (empty? (l/run* [?z] (l/fresh [?x] (oaddress-pname-pstring-paddress+ newF ?x "q" ?z)))))
 
-  (assert (= "z" (first (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-pstring-paddress+ newF ?x ?y ?z))))))
+  (assert (= "z" (first (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-pstring-paddress+ newF ?x ?y ?z))))));-
 
-  (assert (= "w" (second (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-pstring-paddress+ newF ?x ?y ?z))))))
+  (assert (= "w" (second (l/run* [?y] (l/fresh [?x ?z] (oaddress-pname-pstring-paddress+ newF ?x ?y ?z))))));-
 
 
   ;;; functionaddress-returnaddress TESTS
@@ -276,13 +276,13 @@
   (assert (= functionexprReturn (first (l/run* [?objs] 
                                                (l/fresh [?expr] 
                                                         (pred/functionexpression ?expr) 
-                                                        (expression-address ?expr ?objs))))))
+                                                        (expression-address ?expr ?objs))))));-
   
   (assert (= functiondeclarReturn (first (l/run* [?objs] 
                                                  (l/fresh [?expr ?ide] 
                                                           (pred/functiondeclaration ?expr) 
                                                           (pred/has "id" ?expr ?ide) 
-                                                          (expression-address ?ide ?objs))))))
+                                                          (expression-address ?ide ?objs))))));-
 
 (assert (= (l/run* [?objs] 
                    (l/fresh [?expr] 
@@ -354,11 +354,11 @@
                                  (pred/has "id" ?node ?id) 
                                  (expression-address ?id ?obj)))))
 
-  (assert (= (list x x x) (l/run* [?y] (l/fresh [?i ?x] (functionaddress-i-argumentaddress ?x ?i ?y)))))
+  (assert (= (list x x x) (l/run* [?y] (l/fresh [?i ?x] (functionaddress-i-argumentaddress ?x ?i ?y)))));-
 
-  (assert (= (list 1 1 2) (l/run* [?i] (l/fresh [?y ?x] (functionaddress-i-argumentaddress ?x ?i ?y)))))
+  (assert (= (list 1 1 2) (l/run* [?i] (l/fresh [?y ?x] (functionaddress-i-argumentaddress ?x ?i ?y)))));-
 
-  (assert (= (list foo x x) (l/run* [?x] (l/fresh [?y ?i] (functionaddress-i-argumentaddress ?x ?i ?y)))))
+  (assert (= (list foo x x) (l/run* [?x] (l/fresh [?y ?i] (functionaddress-i-argumentaddress ?x ?i ?y)))));-
   
 
   ;;; functionaddress-receiveraddress TESTS

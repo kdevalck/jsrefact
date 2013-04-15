@@ -5,6 +5,8 @@
   (:use [esp :only [esprima parse]]
     [cljs.core.logic :only [membero lvaro nonlvaro conda conde conso flatteno failed?]])
   (:require-macros [cljs.core.logic.macros :as l])
+  (:use-macros [jsrefact.macros.logic :only
+                [equals succeeds fails projectlvars]])
   (:require 
             [jsrefact.project :as proj]
             [jsrefact.predicates :as pred]
@@ -44,8 +46,7 @@
   [?glob]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/project [?jsan]
-                      (l/== ?glob (.-globala ?jsan)))))
+           (equals ?glob (.-globala ?jsan))))
 
 
 (defn
@@ -65,7 +66,7 @@
   [?ide]
   (l/all
     (pred/identifier ?ide)
-    (l/project [?ide] (l/== true (js/isReferenceIdentifier ?ide (proj/parsed))))))
+    (succeeds (js/isReferenceIdentifier ?ide (proj/parsed)))))
 
 (defn
   expression-address
@@ -76,13 +77,12 @@
   [?node ?objects]
   (l/fresh [?jsan ?n ?decl]
            (jsanalysis ?jsan)
-           (l/conde 
+           (l/conde ;-
             [(pred/functionexpression ?node)]
             [(pred/variabledeclaration-name ?decl ?n)(pred/has "id" ?decl ?node)]
             [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?node)]
             [(pred/newexpression ?node)])
-           (l/project [?node ?jsan]
-                      (membero ?objects (seq (.objects ?jsan ?node))))))
+           (projectlvars (membero ?objects (seq (.objects ?jsan ?node))))))
 
 (defn
   store
@@ -90,8 +90,7 @@
   [?store]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
-           (l/project [?jsan]
-                      (l/== ?store (.-entries (.-store ?jsan))))))
+           (equals ?store (.-entries (.-store ?jsan)))))
 
 (defn
   store-element
@@ -100,8 +99,7 @@
   [?store ?el]
   (l/all
     (store ?store)
-    (l/project [?store]
-               (membero ?el (seq ?store)))))
+    (projectlvars (membero ?el (seq ?store)))))
 
 (defn 
   address-value
@@ -113,9 +111,8 @@
   [?address ?value]
   (l/fresh [?jsan ?store ?element]
            (store-element ?store ?element)
-           (l/project [?element]
-                      (l/== ?address (first ?element))
-                      (l/== ?value (.-aval (second ?element))))))
+           (equals ?address (first ?element))
+           (equals ?value (.-aval (second ?element)))))
 
 (defn 
   address-ovalue
@@ -124,9 +121,8 @@
   [?address ?ovalue]
   (l/all 
     (address-value ?address ?ovalue)
-    (l/project [?ovalue]
-      (l/== true (.-isBenv ?ovalue))
-      (l/== true (.isObject ?ovalue)))))
+    (succeeds (.-isBenv ?ovalue))
+    (succeeds (.isObject ?ovalue))))
 
 
 (defn
@@ -138,8 +134,7 @@
   (l/fresh [?glob]
     (address-ovalue ?objaddr ?ovalue)
     (globala ?glob)
-    (l/project [?glob ?objaddr]
-      (l/== false (.equals ?glob ?objaddr)))))
+    (fails (.equals ?glob ?objaddr))))
 
 
 (defn 
@@ -148,9 +143,8 @@
   [?address ?value]
   (l/all 
     (address-value ?address ?value)
-    (l/project [?value]
-      (l/== true (.-isBenv ?value))
-      (l/== true (.isFunction ?value)))))
+    (succeeds (.-isBenv ?value))
+    (succeeds (.isFunction ?value))))
 
 
 (defn
@@ -174,8 +168,7 @@
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (scopenode ?node)
-           (l/project [?node ?jsan]
-                      (membero ?scope (seq (.scope ?jsan ?node))))))
+           (projectlvars (membero ?scope (seq (.scope ?jsan ?node))))))
 
 
 (defn
@@ -188,10 +181,8 @@
   [?objectaddr ?protoaddr]
   (l/fresh [?jsan ?oval ?g]
            (jsanalysis ?jsan)
-           (l/project [?jsan] 
-                      (address-ovalue ?objectaddr ?oval)
-                      (l/project [?objectaddr]
-                                 (membero ?protoaddr (seq (.proto ?jsan ?objectaddr)))))))
+           (address-ovalue ?objectaddr ?oval)
+           (projectlvars (membero ?protoaddr (seq (.proto ?jsan ?objectaddr))))))
 
 
 (defn
@@ -214,8 +205,7 @@
   [?objectaddr ?protochain]
   (l/fresh [?oval]
     (address-ovalue ?objectaddr ?oval)
-    (l/project [?objectaddr]
-      (l/== ?protochain (cons ?objectaddr (distinct (protochain ?objectaddr (list))))))))
+    (equals ?protochain (cons ?objectaddr (distinct (protochain ?objectaddr (list)))))))
 
 
 (defn
@@ -235,8 +225,7 @@
                       (l/project [?binding]
                                  (l/== ?pname (first ?binding))
                                  (membero ?propa (seq (second ?binding)))
-                                 (l/project [?propa]
-                                  (membero ?paddr (seq (.-as (.lookup (proj/jsa) ?propa)))))))))
+                                 (projectlvars (membero ?paddr (seq (.-as (.lookup (proj/jsa) ?propa)))))))))
 
 
 (defn
@@ -245,8 +234,7 @@
   abstract value should be bound"
   ; TODO: (.conc ?avalue) can return false
   [?avalue ?cvalue]
-  (l/project [?avalue]
-             (membero ?cvalue (seq (.conc ?avalue)))))
+  (projectlvars (membero ?cvalue (seq (.conc ?avalue)))))
              ; (misc/lprint ?cvalue)
              ; (l/conde
              ;   [(l/== ?cvalue false)]
@@ -290,15 +278,15 @@
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/fresh [?func ?decl ?argLength]
-                    (l/conde 
+                    (l/conde;-
                       [(pred/functionexpression ?func)]
                       [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?func)])
                     (expression-address ?func ?objectaddr)
-                    (l/project [?func ?decl] (l/conda 
-                                               [(pred/functionexpression ?func)(l/== ?argLength (.-length (.-params ?func)))]
-                                               [(l/== ?argLength (.-length (.-params ?decl)))]))
-                    (l/project [?argLength] (membero ?i (range 1 (+ ?argLength 1))))
-                    (l/project [?jsan ?objectaddr ?i] (membero ?argaddr (seq (.arg ?jsan ?objectaddr ?i)))))))
+                    (projectlvars (l/conda 
+                                    [(pred/functionexpression ?func)(l/== ?argLength (.-length (.-params ?func)))]
+                                    [(l/== ?argLength (.-length (.-params ?decl)))]))
+                    (projectlvars (membero ?i (range 1 (+ ?argLength 1))))
+                    (projectlvars (membero ?argaddr (seq (.arg ?jsan ?objectaddr ?i)))))))
 
 
 (defn
@@ -314,8 +302,7 @@
            (l/fresh [?func]
                     (functiondefinition ?func)
                     (expression-address ?func ?faddr)
-                    (l/project [?jsan ?faddr]
-                               (membero ?receiveraddr (seq (.arg ?jsan ?faddr 0)))))))
+                    (projectlvars (membero ?receiveraddr (seq (.arg ?jsan ?faddr 0)))))))
 
 
 (defn
@@ -332,5 +319,4 @@
            (l/fresh [?decl ?func]
                     (functiondefinition ?func)
                     (expression-address ?func ?faddr)
-                    (l/project [?jsan ?faddr]
-                               (membero ?return (seq (.ret ?jsan ?faddr)))))))
+                    (projectlvars (membero ?return (seq (.ret ?jsan ?faddr)))))))

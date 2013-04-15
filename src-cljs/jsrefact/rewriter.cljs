@@ -10,103 +10,139 @@
      [jsrefact.analysis :as analysis]
      [jsrefact.misc :as misc]))
 
-; Main container of smaller rewrite fragments. 
-;	FIFO-based.
-;	A rewrite fragment consist out of 3 parts
-;		1 part of the ast
-;		2 kind of rewrite: string
-;		3 list of extra parameters
-(def rewrites (atom []))
-
-(defn 
-  	scheduleRewrite
-  	"TODO: doc"
-  	[rewrite]
-  	(swap! rewrites (fn [x] (conj @rewrites rewrite))))
+(defn
+  ast-property-value
+  "Retrieve the value of the specified property
+  from the ast"
+  [ast property]
+  (aget ast property))
 
 (defn
-  	removeRewrite
-  	"TODO: doc"
-  	[]
-  	(swap! rewrites (fn [x] (rest @rewrites))))
-
-(defn 
-  	scheduleRename
-  	"TODO: doc"
-  	[ast oldname newname & other]
-  	(let [rewr (list ast "rename" (list oldname newname other))]
-     		(scheduleRewrite rewr)
-     		true))
-
-(defn 
-  	renameIdentifier
-  	"TODO: doc"
-  	[ast oldValue newValue]
-  	(if (= (pred/ast-kind ast) "Identifier")
-     	(if (= (pred/ast-property-value ast "name") oldValue)
-        		(pred/ast-property-set-value ast "name" newValue)
-        		(println (+ (pred/ast-property-value ast "name") " is not " oldValue)))))
+  ast-add-property
+  "Set the value of the specified property
+  int the ast"
+  [ast property value]
+  (aset ast property value)
+  ast)
 
 (defn
-  	createIdentifier
-  	"TODO: doc"
-  	[newname]
-  	(let [obj (new js/Object)]
-     		(pred/ast-property-set-value obj "type" "Identifier")
-     		(pred/ast-property-set-value obj "name" newname)))
+  ast-change-property
+  "Change value of specified property"
+  [ast property value]
+  (if (.hasOwnProperty ast property)
+    (ast-add-property ast property value))
+  ast)
 
 (defn
-  	renameMemberExpression
-  	"TODO: doc"
-  	[ast oldValue newValue choice]
-  	(if (= choice "object")
-     		(renameIdentifier (.-object ast) oldValue newValue)
-     		(if (= (.-computed ast) false)
-         			(renameIdentifier (.-property ast) oldValue newValue)
-         			(pred/ast-property-set-value ast "property" (createIdentifier newValue)))))
+  create-empty-object
+  "Create & return empty Javascript Object"
+  []
+  (new js/Object))
 
 (defn
-  	doRewriteRename
-  	"TODO: doc"
-  	[Rename]
-  	(let 
-     		[ast (first Rename)
-        		oldValue (first (last Rename))
-        		newValue (second (last Rename))
-        		kind (pred/ast-kind ast)]
-     		(println (+ "Rename " oldValue " to " newValue))
-     		(cond
-         			(= kind "Identifier") (renameIdentifier ast oldValue newValue)
-         			(= kind "Property") (renameIdentifier (.-key ast) oldValue newValue)
-         			(= kind "VariableDeclarator") (renameIdentifier (.-id ast) oldValue newValue)
-         			(= kind "MemberExpression") (renameMemberExpression ast oldValue newValue (first (nth (last Rename) 2)))
-         			;invocations
-         			(= kind "CallExpression") (renameIdentifier (.-callee ast) oldValue newValue) ; to be tested
-         			(= kind "NewExpression") (renameIdentifier (.-callee ast) oldValue newValue); to be tested
-         			;functiondefinition
-         			(= kind "FunctionDeclaration") (renameIdentifier (.-id ast) oldValue newValue); to be tested
-         			:else ast)))
+  insertAt
+  "Insert element at specific index"
+  [coll idx el]
+  (.splice coll idx 0 el)
+  coll)
 
 (defn
-  	doRewrite
-  	"TODO: doc"
-  	[aRewrite]
-  	(let [kind (second aRewrite)]
-     		(cond
-         			(= kind "rename") (doRewriteRename aRewrite))))
+  removeAt
+  "Remove element at specific index"
+  [coll idx]
+  (.splice coll idx 1)
+  coll)
 
 (defn
-  	doRewrites
-  	"TODO: doc"
-  	[]
-  	(while (not (empty? @rewrites))
-     		(let [current (first @rewrites)] 
-         			(doRewrite current)
-         			(removeRewrite)))
-  	(proj/recreateCode)
-  	(proj/analyze (proj/code)))
+  removeNode
+  "Remove specific node"
+  [coll element]
+  (let [idx (.indexOf coll element)]
+    (if (>= idx 0)
+      (removeAt coll idx)
+      coll)))
 
-;;; TEST
-; (proj/analyze "var x = 42;")
-; (l/run* [?res] (l/fresh [?x] (pred/identifier ?x) (l/project [?x] (l/== ?res (scheduleRename ?x "x" "y")))))
-; (doRewrites)
+(defn
+  insertBefore
+  "Insert newElement before occurence of 'element' "
+  [coll element newElement]
+  (let [idx (.indexOf coll element)]
+    (if (>= idx 0)
+      (insertAt coll idx newElement)
+      coll)))
+
+(defn
+  insertAfter
+  "Insert newElement after occurence of 'element' "
+  [coll element newElement]
+  (let [idx (.indexOf coll element)]
+    (if (>= idx 0)
+      (insertAt coll (+ idx 1) newElement))
+    coll))
+
+(defn
+  createIdentifier
+  "Create an identifier node.
+  Should contain: 
+  - type: 'Identifier'
+  - name: newname"
+  [newname]
+  (let [obj (create-empty-object)]
+    (ast-add-property obj "type" "Identifier")
+    (ast-add-property obj "name" newname)))
+
+(defn
+  renameIdentifier
+  "TODO: doc"
+  [ide oldname newname]
+  (if 
+    (and
+      (== (pred/ast-kind ide) "Identifier")
+      (== (ast-property-value ide "name") oldname))
+    (ast-change-property ide "name" newname)
+    (println (+ (ast-property-value ide "name") " is not " oldname))))
+
+(defn
+  renameMemberExpression
+  "Function to rename a memberexpression AST.
+  It's necessary to check if it is the baseobject that needs
+  to be renamed or the member access.
+  If the property part is computed we need to create a 
+  new identifier with the new name and set it as the property."
+  [ast oldValue newValue]
+  (if (== (.-name (.-object ast)) oldValue)
+    (renameIdentifier (.-object ast) oldValue newValue)
+    (if (== (.-computed ast) false)
+      (renameIdentifier (.-property ast) oldValue newValue)
+      (do 
+        (ast-change-property ast "property" (createIdentifier newValue))
+        (ast-change-property ast "computed" false)))))
+
+(defn
+  astRename
+  [ast oldName newName]
+  (let [kind (pred/ast-kind ast)]
+    (cond
+      (== kind "Identifier") (renameIdentifier ast oldName newName)
+      (== kind "Property") (renameIdentifier (.-key ast) oldName newName)
+      (== kind "VariableDeclarator") (renameIdentifier (.-id ast) oldName newName)
+      (== kind "MemberExpression") (renameMemberExpression ast oldName newName)
+      ;invocations
+      (= kind "CallExpression") (renameIdentifier (.-callee ast) oldName newName)
+      (= kind "NewExpression") (renameIdentifier (.-callee ast) oldName newName)
+      ;functiondefinition
+      (= kind "FunctionDeclaration") (renameIdentifier (.-id ast) oldName newName)
+      )))
+
+
+(defn
+  refactor
+  "transformation should be a lambda which shall receive the result of 
+   the preconditions and transform them."
+  [preconditions transformation]
+        ; result of evaluation of preconditions should be put into resultOfPrec
+  (let [resultOfPrec []]
+    ; foreach of the result elements received from the preconditions
+    ;  the transformation should be performed.
+    (transformation resultOfPrec)
+  ))
