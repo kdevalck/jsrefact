@@ -121,7 +121,8 @@ JsAnalysis.prototype.objects =
     {
       return value.as
     }
-    throw new Error("cannot handle value " + value);
+    //throw new Error("cannot handle value " + value);
+    return null;
   }
 
 JsAnalysis.prototype.allObjects =

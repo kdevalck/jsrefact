@@ -75,13 +75,17 @@
   ; TODO: add and test referenceidentifier
   ; newexpression, functionexpression, ~referenceidentifier
   [?node ?objects]
-  (l/fresh [?jsan ?n ?decl]
+  (l/fresh [?jsan ?n ?decl ?par ?key]
            (jsanalysis ?jsan)
            (l/conde ;-
-            [(pred/functionexpression ?node)]
-            [(pred/variabledeclaration-name ?decl ?n)(pred/has "id" ?decl ?node)]
-            [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?node)]
-            [(pred/newexpression ?node)])
+             [(pred/functionexpression ?node)]
+             [(pred/variabledeclaration-name ?decl ?n)(pred/has "id" ?decl ?node)]
+             [(pred/functiondeclaration ?decl) (pred/has "id" ?decl ?node)]
+             [(pred/newexpression ?node)]
+             [(referenceidentifier ?node)
+              (pred/child-parent ?node ?par)
+              (pred/property-key ?par ?key)
+              (fails (= ?key ?node))])
            (projectlvars (membero ?objects (seq (.objects ?jsan ?node))))))
 
 (defn
@@ -257,7 +261,8 @@
 
 (defn
   oaddress-pname-pstring-paddress+
-  "Reification of the relation between ?oaddress, one of its 
+  "Reification of the relation between ?oaddress, one of its properties
+  addresses ?paddress, the abstractname of the property and its concrete name ?pstring.
   Transitive version of oaddress-pname-pstring-paddress. It will search
   up the prototypechain."
   [?oaddress ?pname ?pstring ?paddress]
@@ -294,29 +299,50 @@
   "Reification of the relation between a functiondefinition
   and one of the receivers of it.
   
-  param ?faddr is an address of a functionexpression or functiondeclaration.
-  param ?receiveraddr is the receiver address."
-  [?faddr ?receiveraddr]
+  param ?functionaddress is an address of a functionexpression or functiondeclaration.
+  param ?receiveraddress is the receiver address."
+  [?functionaddress ?receiveraddress]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/fresh [?func]
                     (functiondefinition ?func)
-                    (expression-address ?func ?faddr)
-                    (projectlvars (membero ?receiveraddr (seq (.arg ?jsan ?faddr 0)))))))
+                    (expression-address ?func ?functionaddress)
+                    (projectlvars (membero ?receiveraddress (seq (.arg ?jsan ?functionaddress 0)))))))
 
 
 (defn
   functionaddress-returnaddress
   "Reification of the relation between a functiondefinition and one of its
   objectaddresses it may return.
-  param ?faddr is an address which points to a functiondefinition
-  param ?return is an object that may be returned as result from
+  param ?functionaddress is an address which points to a functiondefinition
+  param ?returnaddress is an object that may be returned as result from
   the function. 
   "
-  [?faddr ?return]
+  [?functionaddress ?returnaddress]
   (l/fresh [?jsan]
            (jsanalysis ?jsan)
            (l/fresh [?decl ?func]
                     (functiondefinition ?func)
-                    (expression-address ?func ?faddr)
-                    (projectlvars (membero ?return (seq (.ret ?jsan ?faddr)))))))
+                    (expression-address ?func ?functionaddress)
+                    (projectlvars (membero ?returnaddress (seq (.ret ?jsan ?functionaddress)))))))
+
+
+(defn
+  functiondeclaration-id-address
+  "Reification of the relation between a functiondeclaration, its 'id' property and
+  the address to the object to which it might evaluate at runtime."
+  [?funcDec ?id ?address]
+  (l/all
+    (pred/functiondeclaration ?funcDec)
+    (pred/has "id" ?funcDec ?id)
+    (expression-address ?id ?address)))
+
+(defn
+  variabledeclarator-id-address
+  "Reification of the relation between a variabledeclaration, its 'id' property and
+  the address to the object to which it might evaluate at runtime."
+  [?varDec ?id ?address]
+  (l/all
+    (pred/variabledeclarator ?varDec)
+    (pred/has "id" ?varDec ?id)
+    (expression-address ?id ?address)))

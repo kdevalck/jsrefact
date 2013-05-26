@@ -12,5 +12,12 @@
                    (equals resultvar# [~@logicvars])
                    ~@goals)))
 
-
+;example
 ;(jsr [?x ?y] (identifier ?x) (identifier-name ?x ?y))
+;(jsr [?x ?y] (pred/identifier-name ?x ?y))
+
+(defmacro
+  refactor
+  [preconditions transformations]
+  `(let [resultOfPrec# ((fn [] ~preconditions))]
+    (doall (map ~transformations (distinct (flatten resultOfPrec#))))))

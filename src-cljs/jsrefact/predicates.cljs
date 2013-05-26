@@ -237,13 +237,19 @@
 
 (defn
   unaryexpression
-  "Reify ?exp with a 'UnaryExpression' from the ast"
+  "Reify ?exp with an 'UnaryExpression' from the ast"
   [?exp]
   (ast "UnaryExpression" ?exp))
 
 (defn
+  updateexpression
+  "Reify ?exp with an 'UpdataExpression' from the ast"
+  [?exp]
+  (ast "UpdateExpression" ?exp))
+
+(defn
   identifier
-  "TODO: comm + test"
+  "Reify ?ide with an 'Identifier' from the ast"
   [?ide]
   (ast "Identifier" ?ide))
 
@@ -254,12 +260,6 @@
   (l/all 
     (identifier ?ide)
     (has "name" ?ide ?name)))
-
-(defn
-  updateexpression
-  "TODO: comm + test"
-  [?exp]
-  (ast "UpdateExpression" ?exp))
 
 (defn
   increment-operand
@@ -329,13 +329,13 @@
 
 (defn
   catchclause
-  "Reify ?clau with an 'CatchClause' from the ast"
+  "Reify ?clau with a 'CatchClause' from the ast"
   [?clau]
   (ast "CatchClause" ?clau))
 
 (defn
   withstatement
-  "Reify ?with with a with statement from the ast"
+  "Reify ?with with a 'withStatement' from the ast"
   [?with]
   (ast "WithStatement" ?with))
 
@@ -374,7 +374,7 @@
 
 (defn
   variabledeclaration-name
-  "Reification of the relation between an variabledeclaration ?decl and
+  "Reification of the relation between a variabledeclaration ?decl and
   its name ?name."
   [?decl ?name]
   (l/fresh [?ide]
@@ -448,7 +448,7 @@
   functiondefinition-callexpression
   "Reification of the relation between a functiondefinition and
   one of its callexpressions.
-  Functiondefinition is either an functiondeclaration or functionexpression."
+  Functiondefinition is either a functiondeclaration or functionexpression."
   [?decl ?callexpr]
   (l/fresh [?fname ?callee ?cname]
     (l/conde 
@@ -457,6 +457,14 @@
     (callexpression-callee ?callexpr ?callee)
     (has "name" ?callee ?cname)
     (l/== ?fname ?cname)))
+
+(defn
+  callexpression-name
+  ""
+  [?callexpr ?name]
+  (l/fresh [?callee]
+    (callexpression-callee ?callexpr ?callee)
+    (has "name" ?callee ?name)))
 
 
 (defn 
@@ -561,3 +569,18 @@
     (objectexpression ?obj)
     (has "properties" ?obj ?props)
     (projectlvars (membero ?prop (seq ?props)))))
+
+(defn
+  child-parent
+  "Unification of the ?parent with the parent node of ?node"
+  [?node ?parent]
+  (l/project [?node] 
+    (equals ?parent (js/parent ?node (proj/parsed)))))
+
+(defn 
+  property-key 
+  "unifies ?key with the 'key' property of
+  ?prop 'Property' ast-node"
+  [?prop ?key] 
+  (l/project [?prop] 
+    (l/== ?key (.-key ?prop))))
